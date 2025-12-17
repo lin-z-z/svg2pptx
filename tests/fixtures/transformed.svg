@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+  <!-- Shapes with transforms -->
+  
+  <!-- Rotated rectangle -->
+  <rect x="50" y="20" width="50" height="30" fill="#3498db" 
+        transform="rotate(30, 75, 35)"/>
+  
+  <!-- Scaled circle -->
+  <circle cx="40" cy="100" r="20" fill="#e74c3c"
+          transform="scale(1.5)"/>
+  
+  <!-- Translated and rotated ellipse -->
+  <ellipse cx="0" cy="0" rx="25" ry="15" fill="#2ecc71"
+           transform="translate(100, 100) rotate(45)"/>
+</svg>
