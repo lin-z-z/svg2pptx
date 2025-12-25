@@ -10,6 +10,7 @@ from svg2pptx.parser.shapes import ParsedShape
 from svg2pptx.parser.paths import PathShape
 from svg2pptx.pptx_writer.shapes import create_shape
 from svg2pptx.pptx_writer.freeform import create_freeform
+from svg2pptx.config import Config
 
 
 def create_group(
@@ -19,6 +20,7 @@ def create_group(
     offset_y: int = 0,
     scale: float = 1.0,
     flatten: bool = False,
+    config: Optional[Config] = None,
 ) -> Optional[GroupShape]:
     """
     Create a PowerPoint group from an SVG group element.
@@ -30,6 +32,7 @@ def create_group(
         offset_y: Y offset in EMU.
         scale: Scale factor.
         flatten: If True, don't create groups, just add shapes directly.
+        config: Optional configuration settings.
 
     Returns:
         Created GroupShape or None.
@@ -41,7 +44,7 @@ def create_group(
         # Add shapes directly without grouping
         for child in group.children:
             add_element_to_shapes(
-                shapes, child, offset_x, offset_y, scale, flatten
+                shapes, child, offset_x, offset_y, scale, flatten, config
             )
         return None
 
@@ -52,7 +55,7 @@ def create_group(
     # Add children to the group
     for child in group.children:
         add_element_to_shapes(
-            group_shapes, child, offset_x, offset_y, scale, flatten
+            group_shapes, child, offset_x, offset_y, scale, flatten, config
         )
 
     return group_shape
@@ -65,6 +68,7 @@ def add_element_to_shapes(
     offset_y: int = 0,
     scale: float = 1.0,
     flatten: bool = False,
+    config: Optional[Config] = None,
 ) -> None:
     """
     Add a parsed element to a shapes collection.
@@ -78,15 +82,23 @@ def add_element_to_shapes(
         offset_y: Y offset in EMU.
         scale: Scale factor.
         flatten: If True, don't create groups.
+        config: Optional configuration settings.
     """
     from svg2pptx.parser.svg_parser import GroupElement, TextElement
     from svg2pptx.pptx_writer.text import create_text
 
+    # Default config if not provided
+    if config is None:
+        config = Config()
+
     if isinstance(element, GroupElement):
-        create_group(shapes, element, offset_x, offset_y, scale, flatten)
+        create_group(shapes, element, offset_x, offset_y, scale, flatten, config)
     elif isinstance(element, PathShape):
-        create_freeform(shapes, element, offset_x, offset_y, scale)
+        if config.convert_shapes:
+            create_freeform(shapes, element, offset_x, offset_y, scale)
     elif isinstance(element, TextElement):
-        create_text(shapes, element, offset_x, offset_y, scale)
+        if config.convert_text:
+            create_text(shapes, element, offset_x, offset_y, scale)
     elif isinstance(element, ParsedShape):
-        create_shape(shapes, element, offset_x, offset_y, scale)
+        if config.convert_shapes:
+            create_shape(shapes, element, offset_x, offset_y, scale)

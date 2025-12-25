@@ -28,6 +28,8 @@ class Config:
         default_stroke_width: Default stroke width in pixels when not specified.
         disable_shadows: Whether to disable shadows on generated shapes.
             Defaults to True.
+        convert_text: Whether to convert text elements. Defaults to True.
+        convert_shapes: Whether to convert shape elements. Defaults to True.
     """
 
     slide_width: int = Inches(13.333)
@@ -42,4 +44,6 @@ class Config:
     default_stroke: str = "none"
     default_stroke_width: float = 1.0
     disable_shadows: bool = True
+    convert_text: bool = True
+    convert_shapes: bool = True
 

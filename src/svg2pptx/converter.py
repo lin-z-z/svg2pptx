@@ -194,4 +194,5 @@ class SVGConverter:
                 vb_offset_y,
                 effective_scale,
                 flatten=self.config.flatten_groups,
+                config=self.config,
             )
