@@ -62,6 +62,13 @@ RGBA_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Pattern for gradient references like url(#gradientId)
+URL_REF_PATTERN = re.compile(r"url\s*\(\s*#([^)]+)\s*\)", re.IGNORECASE)
+
+# Global registry for gradient/pattern colors extracted from <defs>
+# Maps gradient/pattern ID to a fallback solid color
+_gradient_colors: dict[str, str] = {}
+
 
 @dataclass
 class Style:
@@ -138,15 +145,94 @@ class Style:
         return self.stroke_opacity * self.opacity
 
 
-def parse_color(color_str: str) -> str:
+def clear_gradient_registry() -> None:
+    """Clear the gradient color registry. Call before parsing a new SVG."""
+    _gradient_colors.clear()
+
+
+def register_gradient_color(gradient_id: str, color: str) -> None:
     """
-    Parse an SVG/CSS color value.
+    Register a fallback color for a gradient.
 
     Args:
-        color_str: Color string (hex, rgb(), named color, or "none").
+        gradient_id: The gradient/pattern ID (without #).
+        color: The fallback color (hex format).
+    """
+    _gradient_colors[gradient_id] = color
+
+
+def get_gradient_color(gradient_id: str) -> Optional[str]:
+    """
+    Get the fallback color for a gradient.
+
+    Args:
+        gradient_id: The gradient/pattern ID (without #).
 
     Returns:
-        Normalized hex color string (e.g., "#ff0000") or "none".
+        The registered color or None if not found.
+    """
+    return _gradient_colors.get(gradient_id)
+
+
+def parse_gradients_from_defs(defs_element) -> None:
+    """
+    Parse gradient definitions from a <defs> element and register their colors.
+
+    Extracts the first stop color from each linearGradient or radialGradient
+    and registers it as a fallback solid color.
+
+    Args:
+        defs_element: ElementTree element representing the <defs> section.
+    """
+    for child in defs_element:
+        # Get tag name without namespace
+        tag = child.tag
+        if "}" in tag:
+            tag = tag.split("}")[-1]
+        tag = tag.lower()
+
+        if tag in ("lineargradient", "radialgradient"):
+            grad_id = child.get("id")
+            if not grad_id:
+                continue
+
+            # Find the first <stop> element and get its color
+            for stop in child:
+                stop_tag = stop.tag
+                if "}" in stop_tag:
+                    stop_tag = stop_tag.split("}")[-1]
+
+                if stop_tag.lower() == "stop":
+                    # Try to get color from style attribute
+                    style_attr = stop.get("style", "")
+                    stop_color = None
+
+                    # Parse style attribute for stop-color
+                    for declaration in style_attr.split(";"):
+                        declaration = declaration.strip()
+                        if ":" in declaration:
+                            prop, value = declaration.split(":", 1)
+                            if prop.strip().lower() == "stop-color":
+                                stop_color = value.strip()
+                                break
+
+                    # Fallback to stop-color attribute
+                    if not stop_color:
+                        stop_color = stop.get("stop-color")
+
+                    if stop_color:
+                        # Parse and register the color
+                        parsed = _parse_color_value(stop_color)
+                        if parsed and parsed != "none":
+                            register_gradient_color(grad_id, parsed)
+                            break  # Use first stop color
+
+
+def _parse_color_value(color_str: str) -> str:
+    """
+    Internal helper to parse a color value without url() handling.
+
+    This avoids infinite recursion when parsing gradient stop colors.
     """
     if not color_str:
         return "none"
@@ -188,6 +274,69 @@ def parse_color(color_str: str) -> str:
 
     # Unknown format, return as-is
     return color_str
+
+
+def parse_color(color_str: str) -> str:
+    """
+    Parse an SVG/CSS color value.
+
+    Args:
+        color_str: Color string (hex, rgb(), named color, url(#gradient), or "none").
+
+    Returns:
+        Normalized hex color string (e.g., "#ff0000") or "none".
+    """
+    if not color_str:
+        return "none"
+
+    color_str_stripped = color_str.strip()
+    color_str_lower = color_str_stripped.lower()
+
+    # Handle special values
+    if color_str_lower in ("none", "transparent", ""):
+        return "none"
+    if color_str_lower == "currentcolor":
+        return "#000000"  # Default to black
+
+    # Check for gradient/pattern url() references
+    url_match = URL_REF_PATTERN.match(color_str_stripped)
+    if url_match:
+        ref_id = url_match.group(1)
+        gradient_color = get_gradient_color(ref_id)
+        if gradient_color:
+            return gradient_color
+        # Unknown reference, default to transparent/none
+        return "none"
+
+    # Named colors
+    if color_str_lower in CSS_COLORS:
+        return CSS_COLORS[color_str_lower]
+
+    # Hex colors
+    if color_str_lower.startswith("#"):
+        if len(color_str_lower) == 4:
+            # Short hex (#rgb -> #rrggbb)
+            return "#" + "".join(c * 2 for c in color_str_lower[1:])
+        elif len(color_str_lower) == 7:
+            return color_str_lower
+        elif len(color_str_lower) == 9:
+            # #rrggbbaa - strip alpha
+            return color_str_lower[:7]
+
+    # rgb() format
+    rgb_match = RGB_PATTERN.match(color_str_lower)
+    if rgb_match:
+        r, g, b = [int(x) for x in rgb_match.groups()]
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    # rgba() format
+    rgba_match = RGBA_PATTERN.match(color_str_lower)
+    if rgba_match:
+        r, g, b = [int(x) for x in rgba_match.groups()[:3]]
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    # Unknown format, return as-is
+    return color_str_lower
 
 
 def parse_style_attribute(style_str: str) -> dict[str, str]:

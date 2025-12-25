@@ -7,7 +7,12 @@ from typing import Iterator, Optional, Union
 
 from svg2pptx.parser.shapes import ParsedShape, parse_shape
 from svg2pptx.parser.paths import PathShape, parse_path
-from svg2pptx.parser.styles import Style, parse_style
+from svg2pptx.parser.styles import (
+    Style,
+    parse_style,
+    clear_gradient_registry,
+    parse_gradients_from_defs,
+)
 from svg2pptx.parser.transforms import Transform, parse_transform
 from svg2pptx.geometry.units import parse_length, parse_viewbox
 
@@ -152,6 +157,9 @@ class SVGParser:
         """Parse the root SVG element."""
         doc = SVGDocument()
 
+        # Clear gradient registry before parsing new document
+        clear_gradient_registry()
+
         # Parse dimensions
         width_attr = root.get("width", "")
         height_attr = root.get("height", "")
@@ -180,6 +188,14 @@ class SVGParser:
                 pass
         elif doc.viewbox:
             doc.height = doc.viewbox[3]
+
+        # Parse gradient definitions from <defs> elements first
+        for child in root:
+            tag = child.tag
+            if "}" in tag:
+                tag = tag.split("}")[-1]
+            if tag.lower() == "defs":
+                parse_gradients_from_defs(child)
 
         # Parse root style
         doc.root_style = parse_style(root)
