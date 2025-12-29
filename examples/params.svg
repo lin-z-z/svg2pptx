@@ -1,0 +1,90 @@
+<svg viewBox="0 0 850 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.1"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="425" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#333">Generation Parameters Effect</text>
+  
+  <!-- Same prompt box at top -->
+  <rect x="275" y="50" width="300" height="45" rx="8" fill="#E3F2FD" stroke="#64B5F6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="425" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1565C0">SAME PROMPT</text>
+  <text x="425" y="87" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">"Summarize: The quick brown fox..."</text>
+  
+  <!-- Arrows splitting -->
+  <path d="M 425 95 L 425 115" stroke="#666" stroke-width="2"/>
+  <path d="M 425 115 L 145 130" stroke="#666" stroke-width="1"/>
+  <path d="M 425 115 L 425 130" stroke="#666" stroke-width="1"/>
+  <path d="M 425 115 L 705 130" stroke="#666" stroke-width="1"/>
+  
+  <!-- Configuration 1: Deterministic -->
+  <rect x="30" y="135" width="230" height="70" rx="8" fill="#E8F5E9" stroke="#81C784" stroke-width="2" filter="url(#shadow)"/>
+  <text x="145" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2E7D32">Deterministic</text>
+  <text x="145" y="178" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">temperature=0.0</text>
+  <text x="145" y="193" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">do_sample=False</text>
+  
+  <!-- Configuration 2: Balanced -->
+  <rect x="310" y="135" width="230" height="70" rx="8" fill="#FFF3E0" stroke="#FFB74D" stroke-width="2" filter="url(#shadow)"/>
+  <text x="425" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#E65100">Balanced</text>
+  <text x="425" y="178" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">temperature=0.7</text>
+  <text x="425" y="193" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">do_sample=True</text>
+  
+  <!-- Configuration 3: Creative -->
+  <rect x="590" y="135" width="230" height="70" rx="8" fill="#FFEBEE" stroke="#EF5350" stroke-width="2" filter="url(#shadow)"/>
+  <text x="705" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#C62828">High Creativity</text>
+  <text x="705" y="178" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">temperature=1.5</text>
+  <text x="705" y="193" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#333">do_sample=True</text>
+  
+  <!-- Arrows down -->
+  <path d="M 145 205 L 145 225" stroke="#666" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <path d="M 425 205 L 425 225" stroke="#666" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <path d="M 705 205 L 705 225" stroke="#666" stroke-width="1" marker-end="url(#arrowhead)"/>
+  
+  <!-- Output 1: Multiple identical runs -->
+  <rect x="30" y="230" width="230" height="120" rx="8" fill="#FFFFFF" stroke="#81C784" stroke-width="2" filter="url(#shadow)"/>
+  <text x="145" y="252" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#333">Run 1, 2, 3...</text>
+  <rect x="45" y="260" width="200" height="25" rx="4" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="1"/>
+  <text x="145" y="277" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"A fox jumped quickly."</text>
+  <rect x="45" y="290" width="200" height="25" rx="4" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="1"/>
+  <text x="145" y="307" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"A fox jumped quickly."</text>
+  <rect x="45" y="320" width="200" height="25" rx="4" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="1"/>
+  <text x="145" y="337" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"A fox jumped quickly."</text>
+  
+  <!-- Output 2: Varied runs -->
+  <rect x="310" y="230" width="230" height="120" rx="8" fill="#FFFFFF" stroke="#FFB74D" stroke-width="2" filter="url(#shadow)"/>
+  <text x="425" y="252" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#333">Run 1, 2, 3...</text>
+  <rect x="325" y="260" width="200" height="25" rx="4" fill="#FFF3E0" stroke="#FFCC80" stroke-width="1"/>
+  <text x="425" y="277" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"A fox jumped quickly."</text>
+  <rect x="325" y="290" width="200" height="25" rx="4" fill="#FFF3E0" stroke="#FFCC80" stroke-width="1"/>
+  <text x="425" y="307" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"The fox leaped fast."</text>
+  <rect x="325" y="320" width="200" height="25" rx="4" fill="#FFF3E0" stroke="#FFCC80" stroke-width="1"/>
+  <text x="425" y="337" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"A quick fox jumped."</text>
+  
+  <!-- Output 3: Chaotic runs -->
+  <rect x="590" y="230" width="230" height="120" rx="8" fill="#FFFFFF" stroke="#EF5350" stroke-width="2" filter="url(#shadow)"/>
+  <text x="705" y="252" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#333">Run 1, 2, 3...</text>
+  <rect x="605" y="260" width="200" height="25" rx="4" fill="#FFEBEE" stroke="#FFCDD2" stroke-width="1"/>
+  <text x="705" y="277" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"Fox quick brown!!"</text>
+  <rect x="605" y="290" width="200" height="25" rx="4" fill="#FFEBEE" stroke="#FFCDD2" stroke-width="1"/>
+  <text x="705" y="307" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"The animal zoomed..."</text>
+  <rect x="605" y="320" width="200" height="25" rx="4" fill="#FFEBEE" stroke="#FFCDD2" stroke-width="1"/>
+  <text x="705" y="337" text-anchor="middle" font-family="Courier, monospace" font-size="8" fill="#333">"Speedy fox, yes!"</text>
+  
+  <!-- Use case labels -->
+  <rect x="45" y="360" width="200" height="35" rx="5" fill="#E8F5E9" stroke="#4CAF50" stroke-width="2"/>
+  <text x="145" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#2E7D32">✓ Best for:</text>
+  <text x="145" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#333">Testing, JSON output</text>
+  
+  <rect x="325" y="360" width="200" height="35" rx="5" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+  <text x="425" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#E65100">✓ Best for:</text>
+  <text x="425" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#333">General tasks, chat</text>
+  
+  <rect x="605" y="360" width="200" height="35" rx="5" fill="#FFEBEE" stroke="#F44336" stroke-width="2"/>
+  <text x="705" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#C62828">⚠️ Use with caution:</text>
+  <text x="705" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#333">Brainstorming only</text>
+</svg>

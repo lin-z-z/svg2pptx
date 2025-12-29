@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+  <!-- Basic shapes for testing -->
+  
+  <!-- Rectangle with fill -->
+  <rect x="10" y="10" width="50" height="30" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
+  
+  <!-- Circle -->
+  <circle cx="120" cy="30" r="20" fill="#e74c3c" stroke="none"/>
+  
+  <!-- Ellipse -->
+  <ellipse cx="170" cy="30" rx="20" ry="15" fill="#9b59b6" stroke="#8e44ad" stroke-width="1"/>
+  
+  <!-- Line -->
+  <line x1="10" y1="60" x2="60" y2="80" stroke="#2ecc71" stroke-width="3"/>
+  
+  <!-- Polygon (triangle) -->
+  <polygon points="100,50 80,90 120,90" fill="#f1c40f" stroke="#f39c12" stroke-width="2"/>
+  
+  <!-- Polyline -->
+  <polyline points="140,60 160,70 150,85 170,95" fill="none" stroke="#1abc9c" stroke-width="2"/>
+  
+  <!-- Rectangle with opacity -->
+  <rect x="10" y="100" width="40" height="30" fill="#e67e22" opacity="0.7"/>
+  
+  <!-- Text -->
+  <text x="70" y="120" fill="#34495e" font-size="14" font-family="Arial">SVG Test</text>
+</svg>
