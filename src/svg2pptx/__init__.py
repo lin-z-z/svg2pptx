@@ -7,8 +7,16 @@ Convert SVG files to native, editable PowerPoint shapes.
 from svg2pptx.converter import SVGConverter
 from svg2pptx.config import Config
 
-__version__ = "0.1.0"
-__all__ = ["svg_to_pptx", "SVGConverter", "Config"]
+try:
+    from importlib.metadata import version, PackageNotFoundError
+    try:
+        __version__ = version("svg2pptx")
+    except PackageNotFoundError:
+        __version__ = "0.0.0.dev0"  # Fallback for development
+except ImportError:
+    __version__ = "0.0.0.dev0"  # Python < 3.8 fallback
+
+__all__ = ["svg_to_pptx", "SVGConverter", "Config", "__version__"]
 
 
 def svg_to_pptx(

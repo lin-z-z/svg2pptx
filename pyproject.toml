@@ -1,6 +1,6 @@
 [project]
 name = "svg2pptx"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Convert SVG files to native, editable PowerPoint shapes"
 readme = "README.md"
 license = {text = "MIT"}
@@ -41,8 +41,13 @@ Homepage = "https://github.com/svg2pptx/svg2pptx"
 Repository = "https://github.com/svg2pptx/svg2pptx"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# Automatically get version from git tags (e.g., v1.0.0 -> 1.0.0)
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
 
 [tool.setuptools.packages.find]
 where = ["src"]
