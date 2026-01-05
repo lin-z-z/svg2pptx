@@ -11,7 +11,7 @@ pip install svg2pptx
 Or install from source:
 
 ```bash
-git clone https://github.com/svg2pptx/svg2pptx.git
+git clone https://github.com/benouinirachid/svg2pptx.git
 cd svg2pptx
 pip install -e ".[dev]"
 ```
@@ -23,6 +23,34 @@ from svg2pptx import svg_to_pptx
 
 # Convert SVG file to PowerPoint
 svg_to_pptx("icon.svg", "output.pptx")
+```
+
+## CLI Usage
+
+You can also use the command-line interface to convert files:
+
+```bash
+svg2pptx input.svg output.pptx [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-text` | Skip converting text elements |
+| `--no-shapes` | Skip converting shape elements |
+| `--scale <float>` | Scale factor for the SVG content (default: 1.0) |
+| `--flatten` | Flatten groups into individual shapes (default) |
+| `--no-flatten` | Preserve group structure from SVG |
+
+### Examples
+
+```bash
+# Basic conversion
+svg2pptx diagram.svg presentation.pptx
+
+# Scale up by 2x and skip text
+svg2pptx chart.svg slide.pptx --scale 2.0 --no-text
 ```
 
 ## Features
