@@ -119,14 +119,15 @@ class TestParseTransform:
 
     def test_multiple_transforms(self):
         t = parse_transform("translate(10, 0) scale(2)")
-        # translate first, then scale
         x, y = t.apply(5, 0)
-        # (5 + 10) * 2 = 30 for the scaled x
-        # Actually: scale(translate(point))
-        # translate: (5, 0) -> (15, 0)
-        # But transforms are applied in order, so
-        # result = translate.compose(scale).apply(5, 0)
-        # We need to verify the composition logic
+        assert x == 30
+        assert y == 0
+
+    def test_translate_then_rotate_uses_svg_order(self):
+        t = parse_transform("translate(100, 100) rotate(45)")
+        x, y = t.apply(0, 0)
+        assert abs(x - 0) < 0.0001
+        assert abs(y - 141.4213562373) < 0.0001
 
 
 class TestParsePoints:

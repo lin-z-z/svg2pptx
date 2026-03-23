@@ -149,6 +149,13 @@ class TestTransform:
         assert x == 20
         assert y == 0
 
+    def test_compose_transforms_respects_svg_transform_order(self):
+        transforms = [Transform.translate(10, 0), Transform.scale(2)]
+        composed = compose_transforms(transforms)
+        x, y = composed.apply(5, 0)
+        assert x == 30
+        assert y == 0
+
 
 class TestBezierToLines:
     """Tests for Bezier curve approximation."""
