@@ -1,0 +1,213 @@
+"""Scan SVG fixtures and emit page-level feature diagnostics."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import xml.etree.ElementTree as ET
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Iterable
+
+URL_REF_RE = re.compile(r"url\(#([^)]+)\)")
+CURVE_COMMAND_RE = re.compile(r"[CSQTAcsqta]")
+URL_ATTRS = ("fill", "stroke", "filter", "clip-path", "mask")
+OPACITY_ATTRS = ("opacity", "fill-opacity", "stroke-opacity")
+
+
+def _strip_ns(tag: str) -> str:
+    return tag.split("}")[-1].lower()
+
+
+def _extract_url_refs(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return URL_REF_RE.findall(value)
+
+
+def _collect_defined_ids(root: ET.Element) -> set[str]:
+    return {
+        element_id
+        for element in root.iter()
+        if (element_id := element.get("id"))
+    }
+
+
+def _page_title(text_samples: list[str], fallback: str) -> str:
+    for text in text_samples:
+        cleaned = text.strip()
+        if cleaned:
+            return cleaned
+    return fallback
+
+
+def scan_svg(svg_path: Path) -> dict:
+    tree = ET.parse(svg_path)
+    root = tree.getroot()
+    counts: Counter[str] = Counter()
+    transform_nodes = 0
+    opacity_nodes = 0
+    url_refs: list[str] = []
+    curve_paths = 0
+    text_samples: list[str] = []
+
+    for element in root.iter():
+        tag = _strip_ns(element.tag)
+        counts[tag] += 1
+
+        if element.get("transform"):
+            transform_nodes += 1
+
+        if any(element.get(attr) for attr in OPACITY_ATTRS):
+            opacity_nodes += 1
+
+        for attr in URL_ATTRS:
+            url_refs.extend(_extract_url_refs(element.get(attr)))
+
+        if tag == "path" and CURVE_COMMAND_RE.search(element.get("d", "")):
+            curve_paths += 1
+
+        if tag == "text":
+            text_value = "".join(element.itertext()).strip()
+            if text_value:
+                text_samples.append(text_value)
+
+    defined_ids = _collect_defined_ids(root)
+    unresolved_refs = sorted({ref for ref in url_refs if ref not in defined_ids})
+
+    metrics = {
+        "transform_nodes": transform_nodes,
+        "gradient_defs": counts["lineargradient"] + counts["radialgradient"],
+        "filter_defs": counts["filter"],
+        "text_nodes": counts["text"],
+        "tspan_nodes": counts["tspan"],
+        "opacity_nodes": opacity_nodes,
+        "curve_paths": curve_paths,
+        "url_refs": len(url_refs),
+        "unresolved_refs": len(unresolved_refs),
+    }
+
+    risk_tags: list[str] = []
+    if metrics["transform_nodes"] >= 8:
+        risk_tags.append("transform_heavy")
+    if metrics["gradient_defs"] > 0:
+        risk_tags.append("gradient")
+    if metrics["filter_defs"] > 0 or any("filter" in ref.lower() for ref in url_refs):
+        risk_tags.append("filter")
+    if metrics["text_nodes"] >= 16:
+        risk_tags.append("text_dense")
+    if metrics["tspan_nodes"] >= 3:
+        risk_tags.append("tspan_complex")
+    if metrics["opacity_nodes"] >= 6:
+        risk_tags.append("opacity_stack")
+    if metrics["curve_paths"] > 0:
+        risk_tags.append("curve_path")
+    if unresolved_refs:
+        risk_tags.append("unresolved_ref")
+    if root.get("viewBox") is None:
+        risk_tags.append("missing_viewbox")
+
+    return {
+        "page_id": svg_path.stem,
+        "file_name": svg_path.name,
+        "title_hint": _page_title(text_samples, svg_path.stem),
+        "metrics": metrics,
+        "risk_tags": risk_tags,
+        "unresolved_refs": unresolved_refs,
+        "top_text_samples": text_samples[:6],
+    }
+
+
+def scan_svg_directory(input_dir: Path, output_dir: Path | None = None, sample_set: str | None = None) -> dict:
+    svg_files = sorted(input_dir.glob("*.svg"))
+    if not svg_files:
+        raise ValueError(f"No SVG files found in {input_dir}")
+
+    page_reports = [scan_svg(path) for path in svg_files]
+    totals = Counter()
+    risk_distribution = Counter()
+    unresolved_pages: list[str] = []
+
+    for report in page_reports:
+        totals.update(report["metrics"])
+        risk_distribution.update(report["risk_tags"])
+        if report["unresolved_refs"]:
+            unresolved_pages.append(report["page_id"])
+
+    summary = {
+        "schema_version": "1.0",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "sample_set": sample_set or input_dir.name,
+        "input_dir": str(input_dir),
+        "page_count": len(page_reports),
+        "totals": dict(totals),
+        "risk_distribution": dict(risk_distribution),
+        "pages_with_unresolved_refs": unresolved_pages,
+        "pages": page_reports,
+    }
+
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        pages_dir = output_dir / "pages"
+        pages_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "summary.json").write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        for report in page_reports:
+            (pages_dir / f"{report['page_id']}.json").write_text(
+                json.dumps(report, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
+    return summary
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Scan SVG fixtures and emit structured feature diagnostics.",
+    )
+    parser.add_argument(
+        "--input-dir",
+        type=Path,
+        required=True,
+        help="Directory containing SVG pages.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Directory for summary.json and page reports.",
+    )
+    parser.add_argument(
+        "--sample-set",
+        type=str,
+        default=None,
+        help="Logical sample set name written into summary.json.",
+    )
+    return parser
+
+
+def main(argv: Iterable[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    summary = scan_svg_directory(args.input_dir, args.output_dir, args.sample_set)
+    print(
+        json.dumps(
+            {
+                "sample_set": summary["sample_set"],
+                "page_count": summary["page_count"],
+                "totals": summary["totals"],
+                "risk_distribution": summary["risk_distribution"],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

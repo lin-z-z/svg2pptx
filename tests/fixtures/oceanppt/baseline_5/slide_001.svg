@@ -1,0 +1,97 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#F8FCFF" />
+  
+  <!-- Decorative Background Elements -->
+  <defs>
+    <linearGradient id="grad_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E5A8A" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#0E5A8A" stop-opacity="0.15" />
+    </linearGradient>
+    <linearGradient id="grad_accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0E5A8A" />
+      <stop offset="100%" stop-color="#1E88E5" />
+    </linearGradient>
+    <clipPath id="clip_rounded">
+      <rect x="0" y="0" width="1280" height="720" rx="0" />
+    </clipPath>
+  </defs>
+
+  <!-- Abstract Flight Paths -->
+  <g opacity="0.4">
+    <path d="M-100 600 Q 300 550 1380 100" fill="none" stroke="#0E5A8A" stroke-width="1" stroke-dasharray="8 4" />
+    <path d="M-100 650 Q 500 600 1380 200" fill="none" stroke="#0E5A8A" stroke-width="0.5" />
+    <path d="M-100 700 Q 700 650 1380 300" fill="none" stroke="#0E5A8A" stroke-width="2" opacity="0.2" />
+    <circle cx="1100" cy="150" r="200" fill="url(#grad_blue)" />
+    <circle cx="1100" cy="150" r="120" fill="none" stroke="#0E5A8A" stroke-width="0.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- eVTOL Abstract Silhouette -->
+  <g transform="translate(900, 250) scale(1.2)" opacity="0.8">
+    <path d="M0 0 L60 -10 L140 0 L60 15 Z" fill="#0E5A8A" />
+    <rect x="25" y="-25" width="2" height="40" fill="#0E5A8A" rx="1" transform="rotate(15)" />
+    <rect x="105" y="-15" width="2" height="30" fill="#0E5A8A" rx="1" transform="rotate(15)" />
+    <ellipse cx="28" cy="-22" rx="25" ry="3" fill="none" stroke="#0E5A8A" stroke-width="0.5" />
+    <ellipse cx="108" cy="-12" rx="20" ry="2.5" fill="none" stroke="#0E5A8A" stroke-width="0.5" />
+  </g>
+
+  <!-- Header / Top Margin -->
+  <line x1="80" y1="80" x2="140" y2="80" stroke="#0E5A8A" stroke-width="4" />
+  <text x="155" y="86" font-family="Noto Sans SC" font-size="18" font-weight="bold" fill="#0E5A8A" letter-spacing="2">STRATEGIC INSIGHT 202X</text>
+
+  <!-- Main Content Area -->
+  <g transform="translate(80, 220)">
+    <!-- Main Title -->
+    <text font-family="Noto Sans SC" font-size="84" font-weight="900" fill="#0F172A" letter-spacing="4">
+      <tspan x="0" y="0">领航低空</tspan>
+      <tspan x="360" y="0" fill="#0E5A8A">·</tspan>
+      <tspan x="420" y="0">智辟蓝海</tspan>
+    </text>
+    
+    <!-- Sub-headline Badge -->
+    <g transform="translate(0, 50)">
+      <rect x="0" y="0" width="280" height="40" rx="20" fill="#0E5A8A" />
+      <text x="140" y="26" font-family="Noto Sans SC" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">国家战略级新增长极</text>
+      <text x="300" y="28" font-family="Noto Sans SC" font-size="28" font-weight="bold" fill="#0F172A">蕴含万亿级投资机遇</text>
+    </g>
+
+    <!-- Description -->
+    <text x="0" y="140" font-family="Noto Sans SC" font-size="22" fill="#64748B" letter-spacing="1">
+      低空经济未来发展趋势与投资机会研究报告
+    </text>
+  </g>
+
+  <!-- Bento Style Bottom Info Cards -->
+  <g transform="translate(80, 480)">
+    <!-- Card 1: Policy -->
+    <rect x="0" y="0" width="280" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <circle cx="40" cy="40" r="16" fill="#0E5A8A" fill-opacity="0.1" />
+    <text x="40" y="46" font-family="Noto Sans SC" font-size="14" font-weight="bold" fill="#0E5A8A" text-anchor="middle">01</text>
+    <text x="70" y="45" font-family="Noto Sans SC" font-size="20" font-weight="bold" fill="#0F172A">政策红利</text>
+    <text x="30" y="85" font-family="Noto Sans SC" font-size="16" fill="#64748B">顶层设计与产业准入全面放开</text>
+
+    <!-- Card 2: Tech -->
+    <rect x="300" y="0" width="280" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <circle cx="340" cy="40" r="16" fill="#0E5A8A" fill-opacity="0.1" />
+    <text x="340" y="46" font-family="Noto Sans SC" font-size="14" font-weight="bold" fill="#0E5A8A" text-anchor="middle">02</text>
+    <text x="370" y="45" font-family="Noto Sans SC" font-size="20" font-weight="bold" fill="#0F172A">技术突破</text>
+    <text x="330" y="85" font-family="Noto Sans SC" font-size="16" fill="#64748B">eVTOL与智能调度系统迭代</text>
+
+    <!-- Card 3: Business -->
+    <rect x="600" y="0" width="280" height="120" rx="16" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <circle cx="640" cy="40" r="16" fill="#0E5A8A" fill-opacity="0.1" />
+    <text x="640" y="46" font-family="Noto Sans SC" font-size="14" font-weight="bold" fill="#0E5A8A" text-anchor="middle">03</text>
+    <text x="670" y="45" font-family="Noto Sans SC" font-size="20" font-weight="bold" fill="#0F172A">商业落地</text>
+    <text x="630" y="85" font-family="Noto Sans SC" font-size="16" fill="#64748B">城市物流与空中通勤场景加速</text>
+  </g>
+
+  <!-- Footer Info -->
+  <g transform="translate(80, 660)">
+    <text x="0" y="0" font-family="Noto Sans SC" font-size="16" font-weight="bold" fill="#0F172A">汇报人：[您的姓名/团队名]</text>
+    <text x="240" y="0" font-family="Noto Sans SC" font-size="16" fill="#94A3B8">|</text>
+    <text x="260" y="0" font-family="Noto Sans SC" font-size="16" fill="#64748B">202X年X月</text>
+  </g>
+
+  <!-- Right Accent -->
+  <rect x="1240" y="0" width="40" height="720" fill="url(#grad_accent)" opacity="0.8" />
+</svg>

@@ -1,0 +1,105 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="1280" height="720" fill="#F8FCFF" />
+    
+    <!-- Decorative Geometric Elements -->
+    <path d="M1100 0 L1280 0 L1280 300 Z" fill="#0E5A8A" fill-opacity="0.03" />
+    <circle cx="1200" cy="650" r="150" fill="#0E5A8A" fill-opacity="0.02" />
+    <path d="M-50 400 L150 720 L-50 720 Z" fill="#0E5A8A" fill-opacity="0.04" />
+    
+    <!-- Page Header -->
+    <text x="80" y="80" font-family="Noto Sans SC, sans-serif" font-size="40" font-weight="bold" fill="#0F172A">风险防范：安全、监管与环境的应对策略</text>
+    <rect x="80" y="100" width="60" height="6" fill="#0E5A8A" rx="3" />
+    <text x="80" y="135" font-family="Noto Sans SC, sans-serif" font-size="20" fill="#64748B">全方位的风险控制体系，为投资收益保驾护航</text>
+
+    <!-- Main Bento Grid -->
+    <!-- Card 1: Safety First (Primary Focus) -->
+    <g transform="translate(80, 180)">
+        <rect width="680" height="460" rx="16" fill="#FFFFFF" filter="drop-shadow(0 10px 20px rgba(14, 90, 138, 0.08))" />
+        <rect width="680" height="460" rx="16" fill="none" stroke="#0E5A8A" stroke-width="1" stroke-opacity="0.1" />
+        
+        <!-- Shield Decoration -->
+        <path d="M500 100 Q550 80 600 100 V250 Q550 320 500 350 Q450 320 400 250 V100 Q450 80 500 100" fill="#0E5A8A" fill-opacity="0.03" />
+        
+        <g transform="translate(48, 56)">
+            <rect width="48" height="48" rx="12" fill="#0E5A8A" />
+            <path d="M24 14 L32 18 V28 L24 34 L16 28 V18 Z" stroke="white" stroke-width="2" fill="none" />
+            <text x="72" y="36" font-family="Noto Sans SC, sans-serif" font-size="32" font-weight="bold" fill="#0F172A">安全第一：多重冗余保障</text>
+            
+            <g transform="translate(0, 80)">
+                <text y="30" font-family="Noto Sans SC, sans-serif" font-size="56" font-weight="bold" fill="#0E5A8A">99.999%</text>
+                <text y="65" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">系统可靠性设计指标</text>
+                
+                <g transform="translate(0, 120)">
+                    <rect width="584" height="80" rx="12" fill="#F1F5F9" />
+                    <circle cx="30" cy="40" r="10" fill="#0E5A8A" />
+                    <path d="M26 40 L29 43 L34 37" stroke="white" stroke-width="2" fill="none" />
+                    <text x="56" y="36" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="#0F172A">全机身冗余备份</text>
+                    <text x="56" y="60" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">动力、飞控、通讯三级冗余，单点故障不影响飞行安全</text>
+                </g>
+                
+                <g transform="translate(0, 215)">
+                    <rect width="584" height="80" rx="12" fill="#F1F5F9" />
+                    <circle cx="30" cy="40" r="10" fill="#0E5A8A" />
+                    <path d="M26 40 L29 43 L34 37" stroke="white" stroke-width="2" fill="none" />
+                    <text x="56" y="36" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="#0F172A">整机弹射降落伞</text>
+                    <text x="56" y="60" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">极端工况下的最后一道防线，确保人员与资产万无一失</text>
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <!-- Card 2: Regulatory Compliance -->
+    <g transform="translate(780, 180)">
+        <rect width="420" height="215" rx="16" fill="#FFFFFF" filter="drop-shadow(0 10px 20px rgba(14, 90, 138, 0.08))" />
+        <rect width="420" height="215" rx="16" fill="none" stroke="#0E5A8A" stroke-width="1" stroke-opacity="0.1" />
+        
+        <g transform="translate(32, 36)">
+            <text font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0F172A">监管合规</text>
+            <text y="35" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">适航取证进度领先</text>
+            
+            <g transform="translate(0, 70)">
+                <rect width="356" height="8" rx="4" fill="#E2E8F0" />
+                <rect width="300" height="8" rx="4" fill="#0E5A8A" />
+                <text x="310" y="8" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="#0E5A8A">85%</text>
+                
+                <g transform="translate(0, 40)">
+                    <rect width="170" height="40" rx="8" fill="#F0F9FF" stroke="#0E5A8A" stroke-width="1" stroke-dasharray="4 2" />
+                    <text x="85" y="25" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#0E5A8A">CAAC 紧密沟通</text>
+                    <rect x="186" width="170" height="40" rx="8" fill="#F0F9FF" stroke="#0E5A8A" stroke-width="1" stroke-dasharray="4 2" />
+                    <text x="271" y="25" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#0E5A8A">符合适航标准</text>
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <!-- Card 3: Environment Friendly -->
+    <g transform="translate(780, 425)">
+        <rect width="420" height="215" rx="16" fill="#0E5A8A" />
+        
+        <g transform="translate(32, 36)">
+            <text font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">环保友好</text>
+            <text y="35" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#FFFFFF" fill-opacity="0.7">超静音旋翼设计</text>
+            
+            <!-- Soundwave Graphic -->
+            <g transform="translate(0, 80)">
+                <rect x="0" y="15" width="4" height="20" fill="white" fill-opacity="0.3" rx="2" />
+                <rect x="12" y="10" width="4" height="30" fill="white" fill-opacity="0.5" rx="2" />
+                <rect x="24" y="20" width="4" height="10" fill="white" fill-opacity="0.4" rx="2" />
+                <rect x="36" y="5" width="4" height="40" fill="white" fill-opacity="0.8" rx="2" />
+                <rect x="48" y="15" width="4" height="20" fill="white" fill-opacity="0.6" rx="2" />
+                <rect x="60" y="22" width="4" height="6" fill="white" fill-opacity="0.9" rx="2" />
+                
+                <text x="80" y="30" font-family="Noto Sans SC, sans-serif" font-size="42" font-weight="bold" fill="#FFFFFF">&lt; 65 dB</text>
+                <text x="80" y="60" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#FFFFFF" fill-opacity="0.7">环境噪音水平低于行业标准 20%</text>
+            </g>
+        </g>
+        
+        <!-- Leaf Pattern -->
+        <path d="M350 150 Q380 120 410 150 Q380 180 350 150 Z" fill="white" fill-opacity="0.1" />
+        <path d="M370 170 Q400 140 430 170 Q400 200 370 170 Z" fill="white" fill-opacity="0.05" />
+    </g>
+    
+    <!-- Footer Note -->
+    <text x="80" y="685" font-family="Noto Sans SC, sans-serif" font-size="12" fill="#94A3B8">备注：坦诚沟通风险，展示解决问题的能力。所有安全测试数据均可溯源。</text>
+</svg>

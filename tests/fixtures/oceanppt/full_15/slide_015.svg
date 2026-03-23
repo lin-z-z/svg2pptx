@@ -1,0 +1,91 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background & Gradients -->
+    <defs>
+        <linearGradient id="bg_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#F0F7FF;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="accent_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#0E5A8A;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#0E5A8A;stop-opacity:0" />
+        </linearGradient>
+        <filter id="card_shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0E5A8A" flood-opacity="0.06"/>
+        </filter>
+    </defs>
+
+    <rect width="1280" height="720" fill="url(#bg_grad)" />
+    
+    <!-- Decorative Geometric Elements -->
+    <g opacity="0.4">
+        <path d="M1280 150 Q1100 100 1000 300 T800 450" fill="none" stroke="#0E5A8A" stroke-width="1" stroke-dasharray="8 8" />
+        <circle cx="1150" cy="120" r="80" fill="none" stroke="#0E5A8A" stroke-width="0.5" />
+        <circle cx="1150" cy="120" r="60" fill="none" stroke="#0E5A8A" stroke-width="0.5" opacity="0.5" />
+        <rect x="50" y="50" width="120" height="120" fill="url(#accent_grad)" transform="rotate(15 110 110)" />
+    </g>
+
+    <!-- Main Hero Section -->
+    <g transform="translate(640, 280)">
+        <text text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-weight="900" font-size="82" fill="#0F172A" letter-spacing="4">感谢聆听</text>
+        <text text-anchor="middle" y="70" font-family="Noto Sans SC, sans-serif" font-weight="400" font-size="32" fill="#0E5A8A" letter-spacing="12" opacity="0.8">期待与您共同启航</text>
+        
+        <!-- Decoration Line -->
+        <rect x="-100" y="110" width="200" height="4" rx="2" fill="#0E5A8A" />
+    </g>
+
+    <!-- Call to Action Text -->
+    <text x="640" y="440" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-weight="500" font-size="20" fill="#64748B">开启低空经济投资之旅 · 欢迎提问与交流</text>
+
+    <!-- Bento Grid Contact Section -->
+    <g transform="translate(80, 500)">
+        <!-- Contact Card 1: Phone & Email -->
+        <rect width="360" height="160" rx="16" fill="white" filter="url(#card_shadow)" />
+        <g transform="translate(32, 45)">
+            <rect width="4" height="24" fill="#0E5A8A" rx="2" />
+            <text x="16" y="20" font-family="Noto Sans SC, sans-serif" font-weight="700" font-size="22" fill="#0F172A">联系我们</text>
+            
+            <g transform="translate(0, 45)">
+                <text font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">电话：[您的电话]</text>
+                <text y="30" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">邮箱：[您的邮箱]</text>
+                <text y="60" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">官网：[您的网址]</text>
+            </g>
+        </g>
+
+        <!-- Contact Card 2: Q&A Focus -->
+        <g transform="translate(380, 0)">
+            <rect width="360" height="160" rx="16" fill="white" filter="url(#card_shadow)" />
+            <g transform="translate(32, 45)">
+                <rect width="4" height="24" fill="#0E5A8A" rx="2" />
+                <text x="16" y="20" font-family="Noto Sans SC, sans-serif" font-weight="700" font-size="22" fill="#0F172A">Q&amp;A 交流</text>
+                <text y="60" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B" width="280">
+                    <tspan x="0" dy="0">如果您有任何疑问或合作意向</tspan>
+                    <tspan x="0" dy="28">欢迎现在提问，我们现场深入探讨</tspan>
+                </text>
+            </g>
+        </g>
+
+        <!-- Contact Card 3: QR/Social -->
+        <g transform="translate(760, 0)">
+            <rect width="360" height="160" rx="16" fill="#0E5A8A" />
+            <g transform="translate(32, 45)">
+                <text y="20" font-family="Noto Sans SC, sans-serif" font-weight="700" font-size="22" fill="white">关注我们</text>
+                <text y="55" font-family="Noto Sans SC, sans-serif" font-size="14" fill="white" opacity="0.7">获取行业最新动态与深度报告</text>
+                
+                <!-- Placeholder for QR Code -->
+                <g transform="translate(210, -15)">
+                    <rect width="90" height="90" rx="8" fill="white" opacity="0.2" />
+                    <rect x="10" y="10" width="70" height="70" rx="4" fill="white" />
+                    <rect x="25" y="25" width="40" height="40" fill="#0E5A8A" opacity="0.1" />
+                    <text x="45" y="105" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="12" fill="white">官方公众号</text>
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <!-- Footer Logo/Brand -->
+    <g transform="translate(80, 60)">
+        <circle cx="20" cy="20" r="15" fill="#0E5A8A" />
+        <path d="M12 20 L28 20 M20 12 L20 28" stroke="white" stroke-width="3" />
+        <text x="45" y="26" font-family="Noto Sans SC, sans-serif" font-weight="700" font-size="24" fill="#0F172A">LOW-ALTITUDE ECONOMY</text>
+    </g>
+</svg>

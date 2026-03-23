@@ -1,0 +1,87 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FCFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EBF5FF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gold_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B8860B;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#D4AF37;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#AA8A2E;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12" />
+      <feOffset dx="0" dy="8" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.08" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1280" height="720" fill="url(#bg_grad)" />
+  
+  <!-- Geometric Decor -->
+  <g opacity="0.4">
+    <path d="M1280 0 L800 0 L1280 480 Z" fill="#0E5A8A" opacity="0.03" />
+    <path d="M0 720 L480 720 L0 240 Z" fill="#0E5A8A" opacity="0.03" />
+    <circle cx="1200" cy="80" r="150" fill="none" stroke="#0E5A8A" stroke-width="1" opacity="0.1" />
+    <line x1="56" y1="120" x2="200" y2="120" stroke="#0E5A8A" stroke-width="2" />
+  </g>
+
+  <!-- Top Header Area -->
+  <text x="56" y="80" font-family="Noto Sans SC" font-size="20" font-weight="500" fill="#0E5A8A" letter-spacing="2">CONCLUSION</text>
+  <text x="56" y="112" font-family="Noto Sans SC" font-size="36" font-weight="700" fill="#0F172A">顺势而为，共赢低空经济黄金十年</text>
+
+  <!-- Hero Section (Visual Center) -->
+  <g filter="url(#shadow)">
+    <rect x="56" y="160" width="1168" height="300" rx="24" fill="#FFFFFF" />
+    <rect x="56" y="160" width="1168" height="4" rx="2" fill="url(#gold_grad)" />
+    
+    <!-- Hero Content -->
+    <text x="640" y="260" text-anchor="middle" font-family="Noto Sans SC" font-size="64" font-weight="900" fill="#0F172A">
+      共赢低空经济 <tspan fill="url(#gold_grad)">黄金十年</tspan>
+    </text>
+    <text x="640" y="320" text-anchor="middle" font-family="Noto Sans SC" font-size="28" font-weight="400" fill="#64748B" letter-spacing="4">
+      确定性极高的万亿赛道 · 诚邀共建天空未来
+    </text>
+    
+    <!-- CTA Button Style -->
+    <rect x="510" y="365" width="260" height="56" rx="28" fill="#0E5A8A" />
+    <text x="640" y="401" text-anchor="middle" font-family="Noto Sans SC" font-size="20" font-weight="700" fill="#FFFFFF">立即启动战略合作</text>
+  </g>
+
+  <!-- Bento Grid (Bottom Pillars) -->
+  <g transform="translate(56, 484)">
+    <!-- Card 1: Market Judgment -->
+    <rect x="0" y="0" width="376" height="180" rx="16" fill="#FFFFFF" filter="url(#shadow)" stroke="#E2E8F0" stroke-width="1" />
+    <text x="32" y="48" font-family="Noto Sans SC" font-size="22" font-weight="700" fill="#0E5A8A">核心判断</text>
+    <text x="32" y="90" font-family="Noto Sans SC" font-size="32" font-weight="900" fill="#0F172A">0 → 1</text>
+    <text x="32" y="130" font-family="Noto Sans SC" font-size="18" fill="#64748B">正处于爆发转折点</text>
+    <rect x="32" y="145" width="40" height="4" rx="2" fill="#0E5A8A" opacity="0.3" />
+
+    <!-- Card 2: Value Proposition -->
+    <rect x="396" y="0" width="376" height="180" rx="16" fill="#FFFFFF" filter="url(#shadow)" stroke="#E2E8F0" stroke-width="1" />
+    <text x="32" y="48" font-family="Noto Sans SC" font-size="22" font-weight="700" fill="#0E5A8A">价值主张</text>
+    <text x="32" y="90" font-family="Noto Sans SC" font-size="20" font-weight="700" fill="#0F172A">技术领先 + 资源占位</text>
+    <text x="32" y="120" font-family="Noto Sans SC" font-size="20" font-weight="700" fill="#0F172A">+ 成熟模式</text>
+    <text x="32" y="150" font-family="Noto Sans SC" font-size="16" font-weight="500" fill="#D4AF37">实现长期高额回报</text>
+
+    <!-- Card 3: Call to Action Details -->
+    <rect x="792" y="0" width="376" height="180" rx="16" fill="#0E5A8A" filter="url(#shadow)" />
+    <text x="32" y="48" font-family="Noto Sans SC" font-size="22" font-weight="700" fill="#FFFFFF" opacity="0.8">行动号召</text>
+    <text x="32" y="95" font-family="Noto Sans SC" font-size="24" font-weight="700" fill="#FFFFFF">共同定义</text>
+    <text x="32" y="135" font-family="Noto Sans SC" font-size="24" font-weight="700" fill="#FFFFFF">三维出行新未来</text>
+    <!-- Decorative arrow -->
+    <path d="M310 130 L330 130 M320 120 L330 130 L320 140" stroke="#D4AF37" stroke-width="3" fill="none" />
+  </g>
+
+  <!-- Footer Branding -->
+  <line x1="56" y1="690" x2="1224" y2="690" stroke="#0E5A8A" stroke-width="1" opacity="0.1" />
+  <text x="56" y="708" font-family="Noto Sans SC" font-size="12" fill="#94A3B8">STRATEGIC INVESTMENT CONFIDENTIAL © 2024</text>
+  <text x="1224" y="708" text-anchor="end" font-family="Noto Sans SC" font-size="12" font-weight="700" fill="#0E5A8A">THE FUTURE OF LOW-ALTITUDE ECONOMY</text>
+</svg>

@@ -1,0 +1,6 @@
+sample_set,page_id,file_name,scenario_role,artifact_relpath,layout_score,text_score,style_score,hierarchy_score,editability_score,overall_score,problem_types,notes,reviewer,reviewed_at
+baseline_5,slide_001,slide_001.svg,cover,artifacts/regression_runs/<timestamp>_baseline_5/pptx/slide_001.pptx,,,,,,,,,,
+baseline_5,slide_002,slide_002.svg,multi_column,artifacts/regression_runs/<timestamp>_baseline_5/pptx/slide_002.pptx,,,,,,,,,,
+baseline_5,slide_005,slide_005.svg,card_layout,artifacts/regression_runs/<timestamp>_baseline_5/pptx/slide_005.pptx,,,,,,,,,,
+baseline_5,slide_006,slide_006.svg,complex_text,artifacts/regression_runs/<timestamp>_baseline_5/pptx/slide_006.pptx,,,,,,,,,,
+baseline_5,slide_008,slide_008.svg,filter_gradient,artifacts/regression_runs/<timestamp>_baseline_5/pptx/slide_008.pptx,,,,,,,,,,

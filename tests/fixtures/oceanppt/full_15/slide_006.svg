@@ -1,0 +1,106 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background & Setup -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FCFF" />
+      <stop offset="100%" stop-color="#EBF5FF" />
+    </linearGradient>
+    <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E5A8A" />
+      <stop offset="100%" stop-color="#083D5E" />
+    </linearGradient>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.06" />
+    </filter>
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0E5A8A" stroke-width="0.5" stroke-opacity="0.1" />
+    </pattern>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1280" height="720" fill="url(#bgGradient)" />
+  <rect width="1280" height="720" fill="url(#gridPattern)" />
+  
+  <!-- Perspective Decorative Lines (Digital Airspace) -->
+  <g opacity="0.4" stroke="#0E5A8A" stroke-width="1" fill="none">
+    <path d="M0 600 L1280 400" stroke-dasharray="4 4" />
+    <path d="M0 500 L1280 300" stroke-dasharray="4 4" />
+    <path d="M200 720 L600 0" stroke-dasharray="8 8" stroke-opacity="0.2" />
+    <path d="M800 720 L1200 0" stroke-dasharray="8 8" stroke-opacity="0.2" />
+  </g>
+
+  <!-- Page Header -->
+  <text x="56" y="80" font-family="Noto Sans SC, sans-serif" font-size="42" font-weight="bold" fill="#0F172A">
+    基础设施：数字底座支撑<tspan fill="#0E5A8A">“看不见的路”</tspan>
+  </text>
+  <rect x="56" y="100" width="60" height="4" fill="#0E5A8A" rx="2" />
+
+  <!-- Bento Grid Layout -->
+  
+  <!-- Main Hero Card: Digital Base -->
+  <g transform="translate(56, 144)" filter="url(#cardShadow)">
+    <rect width="760" height="520" rx="16" fill="url(#heroGradient)" />
+    <!-- Abstract Digital Twin Graphic -->
+    <g transform="translate(380, 260)" opacity="0.2">
+      <circle r="180" stroke="#FFF" stroke-width="1" fill="none" />
+      <circle r="120" stroke="#FFF" stroke-width="1" fill="none" />
+      <path d="M-200 0 L200 0 M0 -200 L0 200" stroke="#FFF" stroke-width="0.5" />
+      <circle cx="100" cy="-80" r="8" fill="#FFF" />
+      <circle cx="-60" cy="120" r="6" fill="#FFF" />
+    </g>
+    
+    <text x="48" y="80" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="500" fill="#BFDBFE" letter-spacing="2">CORE CONCEPT</text>
+    <text x="48" y="150" font-family="Noto Sans SC, sans-serif" font-size="56" font-weight="bold" fill="#FFFFFF">数字底座</text>
+    <text x="48" y="210" font-family="Noto Sans SC, sans-serif" font-size="28" font-weight="300" fill="#E2E8F0">低空经济大规模运行的<tspan font-weight="bold" fill="#60A5FA">先决条件</tspan></text>
+    
+    <rect x="48" y="260" width="664" height="1" fill="#FFFFFF" fill-opacity="0.2" />
+    
+    <text x="48" y="310" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#CBD5E1" line-height="1.6">
+      <tspan x="48" dy="0">数字化、网络化的基建是确保飞行安全与效率的底层保障。</tspan>
+      <tspan x="48" dy="32">它将物理空间映射为可计算、可编程的动态空域，</tspan>
+      <tspan x="48" dy="32">实现从“无序飞行”到“精细化管控”的跨越。</tspan>
+    </text>
+
+    <!-- Highlight Tag -->
+    <rect x="48" y="420" width="160" height="40" rx="20" fill="#FFFFFF" fill-opacity="0.1" stroke="#FFFFFF" stroke-opacity="0.3" />
+    <text x="128" y="446" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">基建先行</text>
+    <rect x="224" y="420" width="160" height="40" rx="20" fill="#FFFFFF" fill-opacity="0.1" stroke="#FFFFFF" stroke-opacity="0.3" />
+    <text x="304" y="446" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">动态空域</text>
+  </g>
+
+  <!-- Side Card 1: Physical Facilities -->
+  <g transform="translate(840, 144)" filter="url(#cardShadow)">
+    <rect width="384" height="156" rx="16" fill="#FFFFFF" />
+    <rect width="6" height="40" x="0" y="30" fill="#0E5A8A" rx="3" />
+    <text x="32" y="52" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0F172A">物理设施</text>
+    <text x="32" y="90" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">网格化布局垂直起降点</text>
+    <text x="32" y="118" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">智能充电桩及维护站集群</text>
+    <circle cx="340" cy="50" r="20" fill="#F1F5F9" />
+    <path d="M332 50 L348 50 M340 42 L340 58" stroke="#0E5A8A" stroke-width="2" />
+  </g>
+
+  <!-- Side Card 2: Digital System -->
+  <g transform="translate(840, 326)" filter="url(#cardShadow)">
+    <rect width="384" height="156" rx="16" fill="#FFFFFF" />
+    <rect width="6" height="40" x="0" y="30" fill="#0E5A8A" rx="3" />
+    <text x="32" y="52" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0F172A">数字系统</text>
+    <text x="32" y="90" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">低空飞行综合服务平台</text>
+    <text x="32" y="118" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">空域资源动态分配与调度</text>
+    <circle cx="340" cy="50" r="20" fill="#F1F5F9" />
+    <path d="M332 55 L340 45 L348 55" stroke="#0E5A8A" stroke-width="2" fill="none" />
+  </g>
+
+  <!-- Side Card 3: Management System -->
+  <g transform="translate(840, 508)" filter="url(#cardShadow)">
+    <rect width="384" height="156" rx="16" fill="#FFFFFF" />
+    <rect width="6" height="40" x="0" y="30" fill="#0E5A8A" rx="3" />
+    <text x="32" y="52" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0F172A">管理体系</text>
+    <text x="32" y="90" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">“通感一体”全域监控</text>
+    <text x="32" y="118" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">多机协同与实时冲突避让</text>
+    <circle cx="340" cy="50" r="20" fill="#F1F5F9" />
+    <circle cx="340" cy="50" r="6" fill="#0E5A8A" />
+  </g>
+
+  <!-- Footer Info -->
+  <text x="56" y="696" font-family="Noto Sans SC, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">DIGITAL INFRASTRUCTURE FOR LOW-ALTITUDE ECONOMY | STRATEGIC ROADMAP</text>
+</svg>

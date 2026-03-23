@@ -1,0 +1,125 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background & Definitions -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FCFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EBF5FF;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="cardShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#0E5A8A" flood-opacity="0.08"/>
+    </filter>
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0E5A8A" stroke-width="0.5" stroke-opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <!-- Base Layer -->
+  <rect width="1280" height="720" fill="url(#bgGrad)" />
+  <rect width="1280" height="720" fill="url(#gridPattern)" />
+  
+  <!-- Decorative Geometry -->
+  <circle cx="1200" cy="80" r="150" fill="#0E5A8A" fill-opacity="0.03" />
+  <path d="M-50 720 L300 450 L600 720 Z" fill="#0E5A8A" fill-opacity="0.02" />
+
+  <!-- Header Section -->
+  <g transform="translate(64, 64)">
+    <rect width="4" height="40" fill="#0E5A8A" rx="2" />
+    <text x="20" y="34" font-family="Noto Sans SC, sans-serif" font-size="38" font-weight="bold" fill="#0F172A">全产业链：挖掘高价值环节的投资金矿</text>
+    <text x="20" y="65" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#64748B">定位产业核心价值，锁定具备高技术壁垒与超额利润的黄金赛道</text>
+  </g>
+
+  <!-- Main Content: Bento Grid Layout -->
+  
+  <!-- Left Column: Value Pyramid (Visual Center) -->
+  <g transform="translate(64, 160)">
+    <rect width="420" height="500" rx="16" fill="white" filter="url(#cardShadow)" />
+    <text x="30" y="45" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0E5A8A">各环节利润率对比</text>
+    
+    <!-- Pyramid Visualization -->
+    <g transform="translate(60, 100)">
+      <!-- Upstream (Top) -->
+      <path d="M150 0 L300 100 L0 100 Z" fill="#0E5A8A" />
+      <text x="150" y="65" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="white">上游：利润核心</text>
+      <text x="310" y="55" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="#0E5A8A">高毛利 (35%+)</text>
+      
+      <!-- Midstream (Middle) -->
+      <path d="M0 110 L300 110 L330 240 L-30 240 Z" fill="#0E5A8A" fill-opacity="0.8" />
+      <text x="150" y="185" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="white">中游：竞争护城河</text>
+      <text x="340" y="180" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="#0E5A8A">中高毛利 (25-35%)</text>
+
+      <!-- Downstream (Bottom) -->
+      <path d="M-35 250 L335 250 L370 360 L-70 360 Z" fill="#0E5A8A" fill-opacity="0.15" />
+      <text x="150" y="315" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="#0E5A8A">下游：长尾价值</text>
+      <text x="310" y="310" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B">服务化收益</text>
+    </g>
+    
+    <text x="30" y="475" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#94A3B8">注：数据基于行业平均溢价能力估算</text>
+  </g>
+
+  <!-- Right Column: Strategic Cards -->
+  
+  <!-- Card 1: Upstream (Highlighted) -->
+  <g transform="translate(514, 160)">
+    <rect width="702" height="150" rx="16" fill="white" stroke="#0E5A8A" stroke-width="2" filter="url(#glow)" />
+    <rect width="100" height="32" x="572" y="24" rx="16" fill="#0E5A8A" />
+    <text x="622" y="46" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="white">投资金矿</text>
+    
+    <text x="32" y="48" font-family="Noto Sans SC, sans-serif" font-size="26" font-weight="bold" fill="#0E5A8A">上游：核心零部件与新材料</text>
+    
+    <g transform="translate(32, 85)">
+      <g>
+        <rect width="180" height="40" rx="8" fill="#F0F9FF" />
+        <text x="90" y="26" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="18" font-weight="bold" fill="#0E5A8A">电机电控</text>
+      </g>
+      <g transform="translate(200, 0)">
+        <rect width="180" height="40" rx="8" fill="#F0F9FF" />
+        <text x="90" y="26" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="18" font-weight="bold" fill="#0E5A8A">碳纤维材料</text>
+      </g>
+      <g transform="translate(400, 0)">
+        <rect width="180" height="40" rx="8" fill="#F0F9FF" />
+        <text x="90" y="26" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="18" font-weight="bold" fill="#0E5A8A">高能电池</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Card 2: Midstream (Highlighted) -->
+  <g transform="translate(514, 335)">
+    <rect width="702" height="150" rx="16" fill="white" stroke="#0E5A8A" stroke-width="2" filter="url(#glow)" />
+    <rect width="120" height="32" x="552" y="24" rx="16" fill="#0E5A8A" fill-opacity="0.1" />
+    <text x="612" y="46" text-anchor="middle" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="#0E5A8A">高技术壁垒</text>
+
+    <text x="32" y="48" font-family="Noto Sans SC, sans-serif" font-size="26" font-weight="bold" fill="#0E5A8A">中游：整机集成与取证</text>
+    
+    <g transform="translate(32, 85)">
+      <text x="0" y="10" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#0F172A">
+        <tspan font-weight="bold" fill="#0E5A8A">整机集成：</tspan>涉及气动布局优化与系统耦合，技术门槛极高
+      </text>
+      <text x="0" y="40" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#0F172A">
+        <tspan font-weight="bold" fill="#0E5A8A">适航取证：</tspan>民航局安全标准认证，构成天然的准入壁垒
+      </text>
+    </g>
+  </g>
+
+  <!-- Card 3: Downstream (Secondary) -->
+  <g transform="translate(514, 510)">
+    <rect width="702" height="150" rx="16" fill="white" filter="url(#cardShadow)" />
+    <text x="32" y="48" font-family="Noto Sans SC, sans-serif" font-size="26" font-weight="bold" fill="#64748B">下游：运营与长尾服务</text>
+    
+    <g transform="translate(32, 85)">
+      <circle cx="8" cy="-6" r="4" fill="#CBD5E1" />
+      <text x="24" y="0" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#64748B">运营管理：低空空域资源调度与数字化平台</text>
+      
+      <circle cx="8" cy="24" r="4" fill="#CBD5E1" />
+      <text x="24" y="30" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#64748B">延伸服务：保险理赔、专业飞行培训、售后维保</text>
+    </g>
+  </g>
+
+  <!-- Bottom Tagline -->
+  <g transform="translate(1100, 680)">
+    <text text-anchor="end" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="#0E5A8A">INVESTMENT NAVIGATOR 2024</text>
+  </g>
+</svg>

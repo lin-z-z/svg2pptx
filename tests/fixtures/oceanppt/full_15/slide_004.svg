@@ -1,0 +1,95 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1280" height="720" fill="#F8FCFF" />
+  
+  <!-- Decorative Background Elements -->
+  <path d="M1000 0L1280 0V300L1100 0Z" fill="#0E5A8A" fill-opacity="0.03" />
+  <circle cx="1200" cy="100" r="150" fill="none" stroke="#0E5A8A" stroke-width="1" stroke-opacity="0.1" />
+  <rect x="56" y="56" width="40" height="4" fill="#0E5A8A" />
+  
+  <!-- Page Header -->
+  <text x="56" y="90" font-family="Noto Sans SC, sans-serif" font-size="36" font-weight="bold" fill="#0F172A">市场规模：万亿蓝海市场的增长曲线与爆发点</text>
+  <text x="56" y="120" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#64748B">Market Scale: Growth Curve and Inflection Point of the Trillion-Level Blue Ocean</text>
+
+  <!-- Bento Grid - Main Card (Growth Curve) -->
+  <rect x="56" y="150" width="760" height="514" rx="24" fill="#FFFFFF" filter="drop-shadow(0 10px 15px rgba(0,0,0,0.05))" />
+  <text x="96" y="206" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0F172A">2026年：低空经济突破万亿大关</text>
+  <text x="96" y="234" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B">中国低空经济市场规模预测 (单位：亿元)</text>
+  
+  <!-- Area Chart -->
+  <defs>
+    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0E5A8A" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0E5A8A" stop-opacity="0" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Chart Path -->
+  <path d="M120 580 L120 520 Q250 500 380 460 T640 380 T740 280" fill="none" stroke="#0E5A8A" stroke-width="4" stroke-linecap="round" />
+  <path d="M120 580 L120 520 Q250 500 380 460 T640 380 T740 280 L740 580 Z" fill="url(#chartGradient)" />
+  
+  <!-- Data Points -->
+  <circle cx="120" cy="520" r="5" fill="#0E5A8A" />
+  <circle cx="380" cy="460" r="5" fill="#0E5A8A" />
+  <circle cx="640" cy="380" r="5" fill="#0E5A8A" />
+  
+  <!-- Highlight Point 2026 -->
+  <circle cx="740" cy="280" r="12" fill="#0E5A8A" fill-opacity="0.2" filter="url(#glow)" />
+  <circle cx="740" cy="280" r="6" fill="#0E5A8A" />
+  <text x="740" y="250" font-family="Noto Sans SC, sans-serif" font-size="32" font-weight="bold" fill="#0E5A8A" text-anchor="middle">10,000+</text>
+  <text x="740" y="610" font-family="Noto Sans SC, sans-serif" font-size="16" font-weight="bold" fill="#0F172A" text-anchor="middle">2026E</text>
+  
+  <!-- X-Axis Labels -->
+  <text x="120" y="610" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B" text-anchor="middle">2023</text>
+  <text x="380" y="610" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B" text-anchor="middle">2024</text>
+  <text x="640" y="610" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B" text-anchor="middle">2025E</text>
+  
+  <!-- Bento Grid - Side Card Top (Structure) -->
+  <rect x="840" y="150" width="384" height="245" rx="24" fill="#0E5A8A" />
+  <text x="876" y="196" font-family="Noto Sans SC, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">产业结构“三分天下”</text>
+  
+  <!-- Structure Bars -->
+  <g transform="translate(876, 225)">
+    <text y="0" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#BFDBFE">低空制造 (eVTOL/无人机)</text>
+    <rect y="10" width="312" height="8" rx="4" fill="rgba(255,255,255,0.1)" />
+    <rect y="10" width="110" height="8" rx="4" fill="#FFFFFF" />
+    
+    <text y="55" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#BFDBFE">基础设施与基建</text>
+    <rect y="65" width="312" height="8" rx="4" fill="rgba(255,255,255,0.1)" />
+    <rect y="65" width="90" height="8" rx="4" fill="#FFFFFF" />
+    
+    <text y="110" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#BFDBFE">运营服务与保障</text>
+    <rect y="120" width="312" height="8" rx="4" fill="rgba(255,255,255,0.1)" />
+    <rect y="120" width="112" height="8" rx="4" fill="#FFFFFF" />
+  </g>
+
+  <!-- Bento Grid - Side Card Bottom (Conclusion) -->
+  <rect x="840" y="419" width="384" height="245" rx="24" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+  <g transform="translate(876, 465)">
+    <rect width="80" height="28" rx="14" fill="#FEF3C7" />
+    <text x="40" y="19" font-family="Noto Sans SC, sans-serif" font-size="12" font-weight="bold" fill="#92400E" text-anchor="middle">核心结论</text>
+    
+    <text y="65" font-family="Noto Sans SC, sans-serif" font-size="28" font-weight="bold" fill="#0F172A">爆发前夜</text>
+    <text y="105" font-family="Noto Sans SC, sans-serif" font-size="32" font-weight="bold" fill="#0E5A8A">黄金入场期</text>
+    
+    <line x1="0" y1="130" x2="312" y2="130" stroke="#E2E8F0" stroke-width="1" />
+    
+    <g transform="translate(0, 155)">
+      <circle cx="6" cy="6" r="4" fill="#0E5A8A" />
+      <text x="20" y="10" font-family="Noto Sans SC, sans-serif" font-size="15" fill="#475569">空域改革红利加速释放</text>
+      <circle cx="6" cy="34" r="4" fill="#0E5A8A" />
+      <text x="20" y="38" font-family="Noto Sans SC, sans-serif" font-size="15" fill="#475569">数字化管理手段趋于成熟</text>
+    </g>
+  </g>
+  
+  <!-- Floating Tag -->
+  <rect x="560" y="400" width="140" height="40" rx="20" fill="#0F172A" />
+  <text x="630" y="26" font-family="Noto Sans SC, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle" transform="translate(0, 400)">突破万亿元</text>
+  
+  <!-- Bottom Caption -->
+  <text x="1224" y="690" font-family="Noto Sans SC, sans-serif" font-size="12" fill="#94A3B8" text-anchor="end">数据来源：赛迪顾问 / 中国民航局相关预测报告</text>
+</svg>

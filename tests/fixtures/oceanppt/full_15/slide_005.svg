@@ -1,0 +1,141 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background & Decorative Base -->
+  <rect width="1280" height="720" fill="#F8FCFF" />
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0E5A8A" stroke-width="0.5" stroke-opacity="0.05" />
+    </pattern>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F0F7FF;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" />
+      <feOffset dx="0" dy="4" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.08" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1280" height="720" fill="url(#grid)" />
+
+  <!-- Page Header -->
+  <g transform="translate(60, 60)">
+    <rect width="4" height="40" fill="#0E5A8A" rx="2" />
+    <text x="20" y="32" font-family="Noto Sans SC" font-weight="bold" font-size="38" fill="#0F172A">技术演进：eVTOL与能源动力系统的“特斯拉时刻”</text>
+    <text x="20" y="65" font-family="Noto Sans SC" font-size="18" fill="#64748B">垂直起降技术与新能源动力的深度融合，正在重塑低空飞行的商业底层逻辑</text>
+    <rect x="940" y="5" width="220" height="32" rx="16" fill="#0E5A8A" fill-opacity="0.1" />
+    <text x="1050" y="27" font-family="Noto Sans SC" font-weight="bold" font-size="14" fill="#0E5A8A" text-anchor="middle">TECHNOLOGY EVOLUTION</text>
+  </g>
+
+  <!-- Bento Grid Layout -->
+  
+  <!-- Main Card: eVTOL Deconstruction (The Visual Focus) -->
+  <g transform="translate(60, 160)" filter="url(#shadow)">
+    <rect width="640" height="500" rx="20" fill="url(#cardGrad)" stroke="#E2E8F0" stroke-width="1" />
+    <text x="32" y="45" font-family="Noto Sans SC" font-weight="bold" font-size="24" fill="#0F172A">eVTOL 核心技术解构</text>
+    <text x="32" y="75" font-family="Noto Sans SC" font-size="14" fill="#64748B">分布式电推进系统 (DEP) 实现高度集成与冗余安全</text>
+    
+    <!-- Abstract eVTOL Deconstruction Graphic -->
+    <g transform="translate(320, 300)">
+      <!-- Central Body -->
+      <ellipse cx="0" cy="0" rx="100" ry="40" fill="none" stroke="#0E5A8A" stroke-width="2" stroke-dasharray="8 4" opacity="0.3" />
+      <rect x="-60" y="-15" width="120" height="30" rx="15" fill="#0E5A8A" />
+      <text x="0" y="5" font-family="Noto Sans SC" font-weight="bold" font-size="12" fill="#FFFFFF" text-anchor="middle">机身/载荷舱</text>
+      
+      <!-- Rotors/Motors -->
+      <g class="rotor-group">
+        <circle cx="-140" cy="-80" r="35" fill="none" stroke="#0E5A8A" stroke-width="1.5" />
+        <path d="M -140 -115 L -140 -45 M -175 -80 L -105 -80" stroke="#0E5A8A" stroke-width="1" opacity="0.6" />
+        <text x="-140" y="-30" font-family="Noto Sans SC" font-size="12" fill="#0E5A8A" text-anchor="middle">冗余电机</text>
+        
+        <circle cx="140" cy="-80" r="35" fill="none" stroke="#0E5A8A" stroke-width="1.5" />
+        <path d="M 140 -115 L 140 -45 M 105 -80 L 175 -80" stroke="#0E5A8A" stroke-width="1" opacity="0.6" />
+        
+        <circle cx="-140" cy="80" r="35" fill="none" stroke="#0E5A8A" stroke-width="1.5" />
+        <path d="M -140 45 L -140 115 M -175 80 L -105 80" stroke="#0E5A8A" stroke-width="1" opacity="0.6" />
+        
+        <circle cx="140" cy="80" r="35" fill="none" stroke="#0E5A8A" stroke-width="1.5" />
+        <path d="M 140 45 L 140 115 M 105 80 L 175 80" stroke="#0E5A8A" stroke-width="1" opacity="0.6" />
+      </g>
+      
+      <!-- Battery Base -->
+      <rect x="-80" y="60" width="160" height="20" rx="4" fill="#0E5A8A" fill-opacity="0.1" stroke="#0E5A8A" stroke-width="1" />
+      <text x="0" y="75" font-family="Noto Sans SC" font-weight="bold" font-size="12" fill="#0E5A8A" text-anchor="middle">高能量密度动力电池组</text>
+      
+      <!-- Connecting Lines -->
+      <path d="M -60 0 L -140 -45 M 60 0 L 140 -45 M -60 0 L -140 45 M 60 0 L 140 45" stroke="#0E5A8A" stroke-width="1" stroke-dasharray="4 2" opacity="0.4" />
+    </g>
+    
+    <!-- Tesla Moment Badge -->
+    <g transform="translate(32, 420)">
+      <rect width="180" height="50" rx="8" fill="#0E5A8A" />
+      <text x="90" y="32" font-family="Noto Sans SC" font-weight="bold" font-size="20" fill="#FFFFFF" text-anchor="middle">“特斯拉时刻”</text>
+      <text x="200" y="20" font-family="Noto Sans SC" font-size="14" fill="#0F172A">由机械复杂转向</text>
+      <text x="200" y="40" font-family="Noto Sans SC" font-weight="bold" font-size="16" fill="#0E5A8A">电子化与分布式动力</text>
+    </g>
+  </g>
+
+  <!-- Right Side Card 1: Three Pillars -->
+  <g transform="translate(720, 160)" filter="url(#shadow)">
+    <rect width="500" height="240" rx="20" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="32" y="45" font-family="Noto Sans SC" font-weight="bold" font-size="22" fill="#0F172A">三大核心技术支柱</text>
+    
+    <g transform="translate(32, 80)">
+      <!-- Pillar 1 -->
+      <circle cx="20" cy="20" r="20" fill="#0E5A8A" fill-opacity="0.1" />
+      <text x="20" y="26" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0E5A8A" text-anchor="middle">1</text>
+      <text x="55" y="18" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0F172A">飞行器：eVTOL 架构</text>
+      <text x="55" y="40" font-family="Noto Sans SC" font-size="14" fill="#64748B">低噪音、低成本、高冗余安全性</text>
+      
+      <!-- Pillar 2 -->
+      <g transform="translate(0, 60)">
+        <circle cx="20" cy="20" r="20" fill="#0E5A8A" fill-opacity="0.1" />
+        <text x="20" y="26" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0E5A8A" text-anchor="middle">2</text>
+        <text x="55" y="18" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0F172A">动力端：固态电池与氢能</text>
+        <text x="55" y="40" font-family="Noto Sans SC" font-size="14" fill="#64748B">突破航程焦虑，实现商业化续航</text>
+      </g>
+      
+      <!-- Pillar 3 -->
+      <g transform="translate(0, 120)">
+        <circle cx="20" cy="20" r="20" fill="#0E5A8A" fill-opacity="0.1" />
+        <text x="20" y="26" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0E5A8A" text-anchor="middle">3</text>
+        <text x="55" y="18" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0F172A">智控端：5G-A 通感一体</text>
+        <text x="55" y="40" font-family="Noto Sans SC" font-size="14" fill="#64748B">AI自动驾驶确保大规模安全飞行</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right Side Card 2: Compare -->
+  <g transform="translate(720, 420)" filter="url(#shadow)">
+    <rect width="500" height="240" rx="20" fill="#0F172A" />
+    <text x="32" y="45" font-family="Noto Sans SC" font-weight="bold" font-size="22" fill="#FFFFFF">运营成本对比 (USD/Hour)</text>
+    
+    <g transform="translate(32, 90)">
+      <!-- Helicopter -->
+      <text x="0" y="20" font-family="Noto Sans SC" font-size="14" fill="#94A3B8">传统直升机</text>
+      <rect x="100" y="0" width="340" height="30" rx="4" fill="#334155" />
+      <text x="430" y="22" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#FFFFFF" text-anchor="end">$2000 - $4000</text>
+      
+      <!-- eVTOL -->
+      <g transform="translate(0, 60)">
+        <text x="0" y="20" font-family="Noto Sans SC" font-size="14" fill="#94A3B8">eVTOL 飞行器</text>
+        <rect x="100" y="0" width="60" height="30" rx="4" fill="#0E5A8A" />
+        <text x="170" y="22" font-family="Noto Sans SC" font-weight="bold" font-size="18" fill="#0E5A8A">$200 - $400</text>
+        <path d="M 110 45 L 440 45" stroke="#0E5A8A" stroke-width="1" stroke-dasharray="4 4" />
+        <text x="440" y="65" font-family="Noto Sans SC" font-weight="bold" font-size="14" fill="#0E5A8A" text-anchor="end">成本降低约 90%</text>
+      </g>
+    </g>
+    
+    <rect x="32" y="195" width="436" height="1" fill="#FFFFFF" fill-opacity="0.1" />
+    <text x="32" y="218" font-family="Noto Sans SC" font-size="12" fill="#94A3B8">数据基于量产规模化运营测算，低成本是商业化普及的决定性因素</text>
+  </g>
+
+  <!-- Decorative Accents -->
+  <circle cx="1220" cy="60" r="40" fill="#0E5A8A" fill-opacity="0.03" />
+  <circle cx="1220" cy="60" r="20" fill="#0E5A8A" fill-opacity="0.05" />
+</svg>

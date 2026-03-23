@@ -1,0 +1,116 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background & Decorative Textures -->
+  <defs>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.1"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5D17E"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0E5A8A" stroke-width="0.5" opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="720" fill="#F8FCFF"/>
+  <rect width="1280" height="720" fill="url(#gridPattern)"/>
+  
+  <!-- Geometric Accents -->
+  <circle cx="1200" cy="80" r="150" fill="#0E5A8A" opacity="0.03"/>
+  <path d="M-50 600 L150 750 L-50 750 Z" fill="#D4AF37" opacity="0.05"/>
+
+  <!-- Page Header -->
+  <text x="56" y="80" font-family="Noto Sans SC, sans-serif" font-size="42" font-weight="bold" fill="#0F172A">
+    战略定位：低空经济已成为<tspan fill="#0E5A8A">“新质生产力”</tspan>核心引擎
+  </text>
+  <rect x="56" y="100" width="80" height="6" rx="3" fill="url(#goldGrad)"/>
+
+  <!-- BENTO GRID START -->
+  
+  <!-- Main Focal Card: Policy & Definition -->
+  <g filter="url(#cardShadow)">
+    <rect x="56" y="140" width="1168" height="240" rx="20" fill="#0E5A8A"/>
+    <!-- Decorative Pattern on Main Card -->
+    <path d="M1000 140 L1224 140 L1224 380 Q1150 300 1000 380 Z" fill="white" opacity="0.05"/>
+    
+    <text x="100" y="210" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="500" fill="#F5D17E" opacity="0.9">核心结论 / CORE DEFINITION</text>
+    <text x="100" y="280" font-family="Noto Sans SC, sans-serif" font-size="56" font-weight="bold" fill="white">
+      低空经济：国家级<tspan fill="#F5D17E">战略性新兴产业</tspan>
+    </text>
+    <text x="100" y="335" font-family="Noto Sans SC, sans-serif" font-size="22" fill="white" opacity="0.8">
+      《政府工作报告》明确：积极打造生物制造、商业航天、低空经济等新增长引擎。
+    </text>
+    <!-- Badge -->
+    <rect x="1030" y="180" width="140" height="40" rx="20" fill="none" stroke="#F5D17E" stroke-width="2"/>
+    <text x="1100" y="206" font-family="Noto Sans SC, sans-serif" font-size="16" font-weight="bold" fill="#F5D17E" text-anchor="middle">顶层设计</text>
+  </g>
+
+  <!-- Secondary Card 1: Policy High Ground -->
+  <g filter="url(#cardShadow)">
+    <rect x="56" y="405" width="370" height="240" rx="16" fill="white"/>
+    <rect x="56" y="405" width="370" height="4" rx="2" fill="#0E5A8A"/>
+    <text x="88" y="455" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0E5A8A">政策高地</text>
+    <text x="88" y="495" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#475569" line-height="1.6">
+      <tspan x="88" dy="0">● 写入政府工作报告</tspan>
+      <tspan x="88" dy="32">● 20+省份出台专项规划</tspan>
+      <tspan x="88" dy="32">● 适航审定与空域改革加速</tspan>
+    </text>
+  </g>
+
+  <!-- Secondary Card 2: Evolution -->
+  <g filter="url(#cardShadow)">
+    <rect x="455" y="405" width="370" height="240" rx="16" fill="white" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="487" y="455" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0E5A8A">定义演进</text>
+    
+    <!-- Comparison Graphic -->
+    <rect x="487" y="480" width="130" height="110" rx="8" fill="#F1F5F9"/>
+    <text x="552" y="515" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B" text-anchor="middle">传统通航</text>
+    <text x="552" y="555" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="#94A3B8" text-anchor="middle">单一维度</text>
+    
+    <path d="M632 535 L662 535" stroke="#0E5A8A" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#0E5A8A" />
+      </marker>
+    </defs>
+
+    <rect x="677" y="480" width="130" height="110" rx="8" fill="#EBF5FF"/>
+    <text x="742" y="515" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#0E5A8A" text-anchor="middle">低空经济</text>
+    <text x="742" y="555" font-family="Noto Sans SC, sans-serif" font-size="20" font-weight="bold" fill="#0E5A8A" text-anchor="middle">“低空+”</text>
+  </g>
+
+  <!-- Secondary Card 3: Economic Impact -->
+  <g filter="url(#cardShadow)">
+    <rect x="854" y="405" width="370" height="240" rx="16" fill="white"/>
+    <text x="886" y="455" font-family="Noto Sans SC, sans-serif" font-size="24" font-weight="bold" fill="#0E5A8A">经济贡献</text>
+    
+    <text x="886" y="510" font-family="Noto Sans SC, sans-serif" font-size="48" font-weight="bold" fill="#0E5A8A">1:10</text>
+    <text x="1000" y="505" font-family="Noto Sans SC, sans-serif" font-size="18" fill="#64748B">产业带动比</text>
+    
+    <rect x="886" y="535" width="300" height="12" rx="6" fill="#F1F5F9"/>
+    <rect x="886" y="535" width="240" height="12" rx="6" fill="url(#goldGrad)"/>
+    <text x="886" y="580" font-family="Noto Sans SC, sans-serif" font-size="16" fill="#475569">
+      预计到2030年，中国低空经济市场规模将达<tspan font-weight="bold" fill="#0F172A">2万亿</tspan>元。
+    </text>
+  </g>
+
+  <!-- Footer Note -->
+  <g opacity="0.6">
+    <circle cx="60" cy="685" r="4" fill="#D4AF37"/>
+    <text x="74" y="690" font-family="Noto Sans SC, sans-serif" font-size="14" fill="#64748B">
+      备注：政策确定性是投资的第一信心来源。低空经济不仅是技术创新，更是生产关系与空域资源的深度解放。
+    </text>
+  </g>
+  
+  <!-- Corner Accent -->
+  <path d="M1240 680 L1280 680 L1280 720 Z" fill="#0E5A8A"/>
+</svg>

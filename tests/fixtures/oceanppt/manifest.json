@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "frozen_at": "2026-03-24",
+  "source_dir": ".agents/plan/svg2pptx-fork-roadmap/svg_pages",
+  "sample_sets": {
+    "baseline_5": {
+      "description": "快速回归与人工评分基线样本",
+      "slides": [
+        {
+          "file_name": "slide_001.svg",
+          "scenario_role": "cover",
+          "reason": "封面页，覆盖标题、渐变和基础 transform。"
+        },
+        {
+          "file_name": "slide_002.svg",
+          "scenario_role": "multi_column",
+          "reason": "目录/多栏结构，文本密度高，含 filter url 引用。"
+        },
+        {
+          "file_name": "slide_005.svg",
+          "scenario_role": "card_layout",
+          "reason": "卡片容器和结构化布局明显，适合观察层级与样式。"
+        },
+        {
+          "file_name": "slide_006.svg",
+          "scenario_role": "complex_text",
+          "reason": "长段文本与 tspan 较多，适合观察文本中间表示。"
+        },
+        {
+          "file_name": "slide_008.svg",
+          "scenario_role": "filter_gradient",
+          "reason": "渐变与 filter 共存，属于高风险视觉样本。"
+        }
+      ]
+    },
+    "full_15": {
+      "description": "全量固定回归样本",
+      "slides": [
+        { "file_name": "slide_001.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_002.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_003.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_004.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_005.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_006.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_007.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_008.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_009.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_010.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_011.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_012.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_013.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_014.svg", "scenario_role": "full_set" },
+        { "file_name": "slide_015.svg", "scenario_role": "full_set" }
+      ]
+    }
+  }
+}
