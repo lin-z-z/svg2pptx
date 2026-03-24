@@ -58,6 +58,44 @@ svg_to_pptx("input.svg", "output.pptx", config=config)
 - `preserve_groups=True` 仍属于实验路径，`SVG-140` 还没有闭环。
 - path/freeform 曲线精度仍在继续优化，见 `SVG-150`。
 
+## 目录批量导出与结构化结果
+
+如果你要把一批 SVG 页面导成 PPTX，并拿到结构化结果，当前推荐用
+`convert_svg_inputs()`：
+
+```python
+from svg2pptx import convert_svg_inputs
+
+report = convert_svg_inputs(
+    "tests/fixtures/oceanppt/baseline_5",
+    "artifacts/api_batch_smoke",
+)
+
+print(report["status"])
+print(report["totals"])
+```
+
+CLI 也复用了同一份合同：
+
+```powershell
+conda run -n svg2pptx python -m svg2pptx `
+  tests\fixtures\oceanppt\baseline_5 `
+  artifacts\cli_batch_smoke `
+  --report-json artifacts\cli_batch_smoke\report.json `
+  --json
+```
+
+新的结构化结果会包含：
+
+- `status`
+- `input` / `output`
+- `config`
+- `totals`
+- `results[*].gradient_stats`
+- `results[*].render_metrics`
+- `results[*].render_warnings`
+- `results[*].unsupported_styles`
+
 ## 标准回归入口
 
 推荐把下面这条命令当作当前 fork 的标准入口：

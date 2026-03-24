@@ -1,67 +1,90 @@
 """Command-line interface for SVG to PowerPoint conversion."""
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
-from svg2pptx import svg_to_pptx, Config, __version__
+from svg2pptx import Config, __version__, convert_svg_inputs
 
 
-def convert_single_file(input_path: Path, output_path: Path, config: Config) -> bool:
-    """Convert a single SVG file to PPTX.
-    
-    Returns True on success, False on failure.
-    """
-    try:
-        svg_to_pptx(str(input_path), str(output_path), config=config)
-        return True
-    except Exception as e:
-        print(f"Error converting '{input_path}': {e}", file=sys.stderr)
-        return False
+def _build_config(args: argparse.Namespace) -> Config:
+    preserve_groups = not args.flatten
+    return Config(
+        scale=args.scale,
+        curve_tolerance=args.curve_tolerance,
+        preserve_groups=preserve_groups,
+        flatten_groups=args.flatten,
+        convert_text=not args.no_text,
+        convert_shapes=not args.no_shapes,
+    )
 
 
-def convert_folder(input_dir: Path, output_dir: Path, config: Config, recursive: bool = False) -> tuple[int, int]:
-    """Convert all SVG files in a folder to PPTX.
-    
-    Returns tuple of (success_count, failure_count).
-    """
-    # Find all SVG files
-    if recursive:
-        svg_files = list(input_dir.rglob("*.svg"))
+def _write_json_report(report_path: Path, report: dict) -> None:
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _build_error_report(args: argparse.Namespace, message: str) -> dict:
+    return {
+        "schema_version": "1.0",
+        "status": "error",
+        "input": {
+            "path": args.input,
+            "kind": "unknown",
+            "recursive": args.recursive,
+        },
+        "output": {
+            "path": args.output,
+            "kind": "unknown",
+        },
+        "config": {
+            "scale": args.scale,
+            "curve_tolerance": args.curve_tolerance,
+            "flatten_groups": args.flatten,
+            "convert_text": not args.no_text,
+            "convert_shapes": not args.no_shapes,
+        },
+        "totals": {
+            "input_count": 0,
+            "success_count": 0,
+            "failure_count": 1,
+        },
+        "results": [],
+        "error": message,
+    }
+
+
+def _print_human_summary(report: dict) -> None:
+    if report["input"]["kind"] == "directory":
+        print(
+            "Batch conversion complete: "
+            f"{report['totals']['success_count']} succeeded, "
+            f"{report['totals']['failure_count']} failed"
+        )
+        for result in report["results"]:
+            output_name = Path(result["output_path"]).name
+            input_name = Path(result["input_path"]).name
+            if result["status"] == "success":
+                print(f"  ✓ {input_name} → {output_name}")
+            else:
+                print(f"  ✗ {input_name}: {result['error']}")
     else:
-        svg_files = list(input_dir.glob("*.svg"))
-    
-    if not svg_files:
-        print(f"No SVG files found in '{input_dir}'", file=sys.stderr)
-        return 0, 0
-    
-    print(f"Found {len(svg_files)} SVG file(s) to convert...")
-    
-    success_count = 0
-    failure_count = 0
-    
-    for svg_file in svg_files:
-        # Determine output path preserving subdirectory structure for recursive mode
-        if recursive:
-            relative_path = svg_file.relative_to(input_dir)
-            pptx_path = output_dir / relative_path.with_suffix(".pptx")
+        result = report["results"][0] if report["results"] else None
+        if result and result["status"] == "success":
+            print(
+                f"Successfully converted '{result['input_path']}' "
+                f"to '{result['output_path']}'"
+            )
         else:
-            pptx_path = output_dir / svg_file.with_suffix(".pptx").name
-        
-        # Create output subdirectory if needed
-        pptx_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        if convert_single_file(svg_file, pptx_path, config):
-            print(f"  ✓ {svg_file.name} → {pptx_path.name}")
-            success_count += 1
-        else:
-            print(f"  ✗ {svg_file.name} (failed)")
-            failure_count += 1
-    
-    return success_count, failure_count
+            error = result["error"] if result else report.get("error", "unknown error")
+            print(error, file=sys.stderr)
 
 
-def main():
+def main(argv: list[str] | None = None) -> int:
     """Main entry point for the svg2pptx CLI."""
     parser = argparse.ArgumentParser(
         prog="svg2pptx",
@@ -75,8 +98,8 @@ Examples:
 
   # Folder batch conversion
   svg2pptx ./svgs/ ./pptx_output/
-  svg2pptx ./icons/ ./converted/ --recursive
-  svg2pptx ./assets/ ./assets/  # Convert in-place
+  svg2pptx ./icons/ ./converted/ --recursive --report-json ./converted/report.json
+  svg2pptx ./assets/ ./assets/ --json
         """,
     )
 
@@ -118,6 +141,12 @@ Examples:
         default=1.0,
         help="Scale factor for the SVG content (default: 1.0)",
     )
+    parser.add_argument(
+        "--curve-tolerance",
+        type=float,
+        default=1.0,
+        help="Curve approximation tolerance (default: 1.0)",
+    )
 
     parser.add_argument(
         "--flatten",
@@ -138,61 +167,40 @@ Examples:
         action="version",
         version=f"%(prog)s {__version__}",
     )
-
-    args = parser.parse_args()
-
-    input_path = Path(args.input)
-    output_path = Path(args.output)
-
-    # Check if input exists
-    if not input_path.exists():
-        print(f"Error: Input path '{args.input}' not found.", file=sys.stderr)
-        sys.exit(1)
-
-    # Create configuration
-    config = Config(
-        scale=args.scale,
-        flatten_groups=args.flatten,
-        convert_text=not args.no_text,
-        convert_shapes=not args.no_shapes,
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the structured conversion report as JSON.",
+    )
+    parser.add_argument(
+        "--report-json",
+        type=Path,
+        default=None,
+        help="Write the structured conversion report to a JSON file.",
     )
 
-    # Batch mode: input is a directory
-    if input_path.is_dir():
-        # Output must be a directory in batch mode
-        if output_path.exists() and not output_path.is_dir():
-            print(f"Error: Output '{args.output}' must be a directory for batch conversion.", file=sys.stderr)
-            sys.exit(1)
-        
-        # Create output directory
-        output_path.mkdir(parents=True, exist_ok=True)
-        
-        success, failures = convert_folder(input_path, output_path, config, recursive=args.recursive)
-        
-        print(f"\nBatch conversion complete: {success} succeeded, {failures} failed")
-        
-        if failures > 0:
-            sys.exit(1)
-    
-    # Single file mode
+    args = parser.parse_args(argv)
+
+    try:
+        report = convert_svg_inputs(
+            args.input,
+            args.output,
+            config=_build_config(args),
+            recursive=args.recursive,
+        )
+    except Exception as exc:
+        report = _build_error_report(args, str(exc))
+
+    if args.report_json is not None:
+        _write_json_report(args.report_json, report)
+
+    if args.json:
+        print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
-        if args.recursive:
-            print("Warning: --recursive flag is ignored for single file conversion.", file=sys.stderr)
-        
-        if not input_path.suffix.lower() == ".svg":
-            print(f"Warning: Input file '{args.input}' does not have .svg extension.", file=sys.stderr)
+        _print_human_summary(report)
 
-        if not output_path.suffix.lower() == ".pptx":
-            print(f"Warning: Output file '{args.output}' does not have .pptx extension.", file=sys.stderr)
-
-        # Create output directory if it doesn't exist
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if convert_single_file(input_path, output_path, config):
-            print(f"Successfully converted '{args.input}' to '{args.output}'")
-        else:
-            sys.exit(1)
+    return 0 if report["status"] == "success" else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
