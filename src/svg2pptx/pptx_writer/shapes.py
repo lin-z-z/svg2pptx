@@ -130,6 +130,8 @@ def create_rectangle(
         disable_shadow=config.disable_shadows if config else True,
         config=config,
     )
+    if config is not None:
+        config.note_shape_created("rect")
     return shape
 
 
@@ -171,6 +173,8 @@ def create_oval(
         disable_shadow=config.disable_shadows if config else True,
         config=config,
     )
+    if config is not None:
+        config.note_shape_created("oval")
     return shape
 
 
@@ -202,6 +206,8 @@ def create_line(
     _apply_shadow(connector, disable_shadow=config.disable_shadows if config else True)
     _record_style_metadata(line.style, config, source="connector")
     _apply_line_format(connector.line, line.style, config)
+    if config is not None:
+        config.note_shape_created("line")
 
     return connector
 

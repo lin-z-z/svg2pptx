@@ -76,6 +76,7 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
     template = REPORT_TEMPLATE_PATH.read_text(encoding="utf-8")
     unsupported_summary = _summarize_unsupported_styles(results)
     gradient_summary = _summarize_gradient_stats(results)
+    render_summary = _summarize_render_metrics(results)
     filter_summary = summary.get("filter_support_summary", {})
     filter_pages = [
         {
@@ -104,6 +105,11 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
     report += (
         "\n\n## Gradient 支持统计\n\n```json\n"
         + json.dumps(gradient_summary, ensure_ascii=False, indent=2)
+        + "\n```\n"
+    )
+    report += (
+        "\n\n## Render 保护统计\n\n```json\n"
+        + json.dumps(render_summary, ensure_ascii=False, indent=2)
         + "\n```\n"
     )
     report += (
@@ -156,6 +162,35 @@ def _summarize_gradient_stats(results: list[dict]) -> dict:
         stats = result.get("gradient_stats", {})
         for key in summary:
             summary[key] += int(stats.get(key, 0))
+    return summary
+
+
+def _summarize_render_metrics(results: list[dict]) -> dict:
+    summary = {
+        "max_shape_count": 0,
+        "max_freeform_points": 0,
+        "max_points_single_shape": 0,
+        "warning_count": 0,
+        "pages_with_warnings": [],
+    }
+    for result in results:
+        metrics = result.get("render_metrics", {})
+        warnings = result.get("render_warnings", [])
+        summary["max_shape_count"] = max(
+            summary["max_shape_count"],
+            int(metrics.get("shape_count", 0)),
+        )
+        summary["max_freeform_points"] = max(
+            summary["max_freeform_points"],
+            int(metrics.get("freeform_points", 0)),
+        )
+        summary["max_points_single_shape"] = max(
+            summary["max_points_single_shape"],
+            int(metrics.get("max_points_single_shape", 0)),
+        )
+        summary["warning_count"] += len(warnings)
+        if warnings:
+            summary["pages_with_warnings"].append(result["page_id"])
     return summary
 
 
@@ -220,6 +255,8 @@ def run_regression(
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                     "error": str(exc),
                     "gradient_stats": dict(active_config.gradient_stats),
+                    "render_metrics": dict(active_config.render_metrics),
+                    "render_warnings": list(active_config.render_warnings),
                     "unsupported_styles": list(active_config.unsupported_styles),
                 }
             )
@@ -232,6 +269,8 @@ def run_regression(
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                     "error": "",
                     "gradient_stats": dict(active_config.gradient_stats),
+                    "render_metrics": dict(active_config.render_metrics),
+                    "render_warnings": list(active_config.render_warnings),
                     "unsupported_styles": list(active_config.unsupported_styles),
                 }
             )
@@ -239,6 +278,7 @@ def run_regression(
     _render_report(run_dir, sample_dir, sample_set_name, summary, results)
     unsupported_summary = _summarize_unsupported_styles(results)
     gradient_summary = _summarize_gradient_stats(results)
+    render_summary = _summarize_render_metrics(results)
     filter_summary = summary.get("filter_support_summary", {})
     filter_pages = [
         {
@@ -267,6 +307,7 @@ def run_regression(
             "failure_count": sum(1 for item in results if item["status"] != "success"),
         },
         "gradient_support_summary": gradient_summary,
+        "render_protection_summary": render_summary,
         "filter_support_summary": filter_summary,
         "filter_page_results": filter_pages,
         "unsupported_styles_summary": unsupported_summary,

@@ -56,6 +56,8 @@ def create_group(
 
     # Create a new group
     group_shape = shapes.add_group_shape()
+    if config is not None:
+        config.note_shape_created("group")
     group_shapes = group_shape.shapes
 
     # Add children to the group
@@ -119,7 +121,7 @@ def add_element_to_shapes(
             )
     elif isinstance(element, TextElement):
         if config.convert_text:
-            create_text(shapes, element, offset_x, offset_y, scale)
+            create_text(shapes, element, offset_x, offset_y, scale, config=config)
     elif isinstance(element, ParsedShape):
         if config.convert_shapes:
             create_shape(

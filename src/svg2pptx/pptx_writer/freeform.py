@@ -77,6 +77,8 @@ def create_freeform_from_points(
         (px_to_emu(x * scale), px_to_emu(y * scale))
         for x, y in transformed_points
     ]
+    if config is not None:
+        config.note_freeform_points(len(emu_points), type(parsed_shape).__name__)
 
     # Determine if closed
     is_closed = isinstance(parsed_shape, PolygonShape)
@@ -96,6 +98,8 @@ def create_freeform_from_points(
         disable_shadow=config.disable_shadows if config else True,
         config=config,
     )
+    if config is not None:
+        config.note_shape_created(type(parsed_shape).__name__)
 
     return shape
 
@@ -145,6 +149,7 @@ def create_freeform_from_path(
         for x, y in transformed_first[1:]
     ]
     builder.add_line_segments(emu_points, close=first_closed)
+    total_points = len(transformed_first)
 
     # Add additional subpaths using move_to
     for subpath_points, is_closed in path.subpaths[1:]:
@@ -164,6 +169,7 @@ def create_freeform_from_path(
             for x, y in transformed[1:]
         ]
         builder.add_line_segments(emu_points, close=is_closed)
+        total_points += len(transformed)
 
     # Convert to shape
     shape = builder.convert_to_shape(offset_x, offset_y)
@@ -175,5 +181,8 @@ def create_freeform_from_path(
         disable_shadow=config.disable_shadows if config else True,
         config=config,
     )
+    if config is not None:
+        config.note_freeform_points(total_points, "PathShape")
+        config.note_shape_created("PathShape")
 
     return shape

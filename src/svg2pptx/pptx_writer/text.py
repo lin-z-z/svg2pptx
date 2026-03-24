@@ -9,6 +9,7 @@ from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 
 from svg2pptx.parser.svg_parser import TextElement, TextSpan
+from svg2pptx.config import Config
 from svg2pptx.geometry.units import px_to_emu
 from svg2pptx.pptx_writer.shapes import parse_hex_color
 
@@ -19,6 +20,7 @@ def create_text(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> Optional[BaseShape]:
     """
     Create a PowerPoint text box from an SVG text element.
@@ -108,6 +110,9 @@ def create_text(
             text_box.shadow.visible = False
     except (AttributeError, NotImplementedError):
         pass
+
+    if config is not None:
+        config.note_shape_created("text")
 
     return text_box
 

@@ -361,6 +361,40 @@ class TestConvertFile:
         assert glow.get("rad") == str(px_to_emu(12))
         assert glow.find(qn("a:srgbClr")).get("val") == "0E5A8A"
 
+    def test_converter_records_shape_count_overflow_warning(self):
+        """Shape inflation should emit a structured warning instead of staying silent."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <rect x="10" y="10" width="20" height="20" fill="#ff0000" />
+            <rect x="40" y="10" width="20" height="20" fill="#00ff00" />
+            <rect x="70" y="10" width="20" height="20" fill="#0000ff" />
+        </svg>"""
+
+        converter = SVGConverter(Config(max_shapes_per_page=2))
+        converter.convert_string(svg)
+
+        assert converter.config.render_metrics["shape_count"] == 3
+        assert any(
+            warning["code"] == "shape-count-overflow"
+            for warning in converter.config.render_warnings
+        )
+
+    def test_converter_records_freeform_point_overflow_warning(self):
+        """Large freeform point sets should surface page and per-shape warnings."""
+        points = " ".join(f"{idx},{idx % 7}" for idx in range(80))
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="300" height="120">
+            <polyline points="{points}" fill="none" stroke="#0E5A8A" />
+        </svg>'''
+
+        converter = SVGConverter(
+            Config(max_points_per_freeform=40, max_freeform_points_per_page=40)
+        )
+        converter.convert_string(svg)
+
+        assert converter.config.render_metrics["freeform_points"] == 80
+        codes = {warning["code"] for warning in converter.config.render_warnings}
+        assert "freeform-points-per-shape-overflow" in codes
+        assert "freeform-points-per-page-overflow" in codes
+
     def test_centered_cjk_title_gets_non_trivial_textbox_width(self):
         """Real centered Chinese titles should not collapse to latin-style width."""
         svg_path = FIXTURES_DIR / "oceanppt" / "full_15" / "slide_015.svg"

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from svg2pptx import Config
 from scripts.diag_svg2pptx import run_regression
 from scripts.diag_svg_feature_scan import scan_svg_directory
 
@@ -102,6 +103,7 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
     assert saved_manifest["sample_set"] == "smoke"
     assert saved_manifest["unsupported_styles_summary"] == []
     assert "filter_support_summary" in saved_manifest
+    assert "render_protection_summary" in saved_manifest
 
 
 def test_run_regression_records_unsupported_style_items(tmp_path):
@@ -166,3 +168,31 @@ def test_run_regression_exposes_filter_page_results(tmp_path):
     assert manifest["filter_page_results"][0]["filters"][0]["current_action"] == "ppt_glow"
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "Filter 页结果" in report
+
+
+def test_run_regression_records_render_protection_warnings(tmp_path):
+    sample_dir = tmp_path / "samples"
+    sample_dir.mkdir()
+    points = " ".join(f"{idx},{idx % 7}" for idx in range(90))
+    (sample_dir / "dense_path.svg").write_text(
+        f"""<svg xmlns="http://www.w3.org/2000/svg" width="300" height="120">
+        <polyline points="{points}" fill="none" stroke="#0E5A8A" />
+        </svg>""",
+        encoding="utf-8",
+    )
+
+    config = Config(max_points_per_freeform=40, max_freeform_points_per_page=40)
+    run_dir, manifest = run_regression(
+        sample_dir,
+        tmp_path / "artifacts",
+        "dense_path",
+        config=config,
+    )
+
+    assert manifest["render_protection_summary"]["warning_count"] >= 2
+    warnings = manifest["results"][0]["render_warnings"]
+    codes = {warning["code"] for warning in warnings}
+    assert "freeform-points-per-shape-overflow" in codes
+    assert "freeform-points-per-page-overflow" in codes
+    report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
+    assert "Render 保护统计" in report
