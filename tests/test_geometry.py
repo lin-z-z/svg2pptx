@@ -4,7 +4,13 @@ import pytest
 import math
 
 from svg2pptx.geometry.units import px_to_emu, emu_to_px, parse_length, parse_viewbox
-from svg2pptx.geometry.transforms import Transform, parse_transform, compose_transforms
+from svg2pptx.geometry.transforms import (
+    Transform,
+    parse_transform,
+    compose_transforms,
+    transform_rect_to_bbox,
+    transform_ellipse_to_bbox,
+)
 from svg2pptx.geometry.curves import bezier_to_lines, svg_arc_to_lines
 
 
@@ -155,6 +161,28 @@ class TestTransform:
         x, y = composed.apply(5, 0)
         assert x == 30
         assert y == 0
+
+    def test_transform_rect_to_bbox_scales_nested_group_geometry(self):
+        transform = Transform.translate(10, 20).compose(Transform.scale(2))
+        left, top, width, height = transform_rect_to_bbox(
+            5, 7, 10, 15, transform
+        )
+        assert left == 20
+        assert top == 34
+        assert width == 20
+        assert height == 30
+
+    def test_transform_ellipse_to_bbox_handles_scale_and_translate(self):
+        transform = Transform.translate(10, 20).compose(
+            Transform.scale(2, 3)
+        )
+        left, top, width, height = transform_ellipse_to_bbox(
+            20, 10, 5, 4, transform
+        )
+        assert left == 40
+        assert top == 38
+        assert width == 20
+        assert height == 24
 
 
 class TestBezierToLines:

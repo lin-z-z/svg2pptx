@@ -6,8 +6,10 @@ import tempfile
 import os
 
 from pptx import Presentation
+from pptx.util import Emu
 
 from svg2pptx import svg_to_pptx, SVGConverter, Config
+from svg2pptx.geometry.units import px_to_emu
 
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -130,6 +132,39 @@ class TestConvertFile:
         finally:
             if os.path.exists(pptx_path):
                 os.unlink(pptx_path)
+
+    def test_grouped_and_flattened_share_nested_group_bbox(self):
+        """Nested group geometry should stay consistent across both writers."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+            <g transform="translate(10, 20)">
+                <g transform="scale(2)">
+                    <rect x="5" y="7" width="10" height="15" fill="#ff0000"/>
+                </g>
+            </g>
+        </svg>"""
+
+        flattened = SVGConverter(Config(flatten_groups=True)).convert_string(svg)
+        grouped = SVGConverter(
+            Config(preserve_groups=True, flatten_groups=False)
+        ).convert_string(svg)
+
+        flat_shape = flattened.slides[0].shapes[0]
+        grouped_shape = grouped.slides[0].shapes[0].shapes[0].shapes[0]
+
+        expected_left = Emu(px_to_emu(20))
+        expected_top = Emu(px_to_emu(34))
+        expected_width = Emu(px_to_emu(20))
+        expected_height = Emu(px_to_emu(30))
+
+        assert flat_shape.left == expected_left
+        assert flat_shape.top == expected_top
+        assert flat_shape.width == expected_width
+        assert flat_shape.height == expected_height
+
+        assert grouped_shape.left == expected_left
+        assert grouped_shape.top == expected_top
+        assert grouped_shape.width == expected_width
+        assert grouped_shape.height == expected_height
 
 
 class TestAddToSlide:

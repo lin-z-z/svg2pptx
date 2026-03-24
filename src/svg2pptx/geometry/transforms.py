@@ -140,6 +140,97 @@ def compose_transforms(transforms: list[Transform]) -> Transform:
     return result
 
 
+def points_to_bbox(
+    points: list[tuple[float, float]]
+) -> tuple[float, float, float, float]:
+    """
+    Convert a point collection to an axis-aligned bounding box.
+
+    Args:
+        points: List of (x, y) tuples.
+
+    Returns:
+        Bounding box as (left, top, width, height).
+    """
+    if not points:
+        raise ValueError("points must not be empty")
+
+    xs = [point[0] for point in points]
+    ys = [point[1] for point in points]
+    left = min(xs)
+    top = min(ys)
+    return (left, top, max(xs) - left, max(ys) - top)
+
+
+def transform_rect_to_bbox(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    transform: Transform,
+) -> tuple[float, float, float, float]:
+    """
+    Project a rectangle through an affine transform and return its bbox.
+
+    Args:
+        x: Rectangle left coordinate.
+        y: Rectangle top coordinate.
+        width: Rectangle width.
+        height: Rectangle height.
+        transform: Affine transform to apply.
+
+    Returns:
+        Bounding box as (left, top, width, height).
+    """
+    corners = [
+        (x, y),
+        (x + width, y),
+        (x + width, y + height),
+        (x, y + height),
+    ]
+    return points_to_bbox(transform.apply_to_points(corners))
+
+
+def transform_ellipse_to_bbox(
+    cx: float,
+    cy: float,
+    rx: float,
+    ry: float,
+    transform: Transform,
+) -> tuple[float, float, float, float]:
+    """
+    Project an ellipse through an affine transform and return its bbox.
+
+    This keeps the geometry work inside the geometry layer so grouped and
+    flattened writers can consume the same global bbox contract.
+
+    Args:
+        cx: Ellipse center x.
+        cy: Ellipse center y.
+        rx: Ellipse x radius.
+        ry: Ellipse y radius.
+        transform: Affine transform to apply.
+
+    Returns:
+        Bounding box as (left, top, width, height).
+    """
+    center_x, center_y = transform.apply(cx, cy)
+    axis_x_end = transform.apply(cx + rx, cy)
+    axis_y_end = transform.apply(cx, cy + ry)
+
+    axis_x = (axis_x_end[0] - center_x, axis_x_end[1] - center_y)
+    axis_y = (axis_y_end[0] - center_x, axis_y_end[1] - center_y)
+
+    half_width = math.sqrt(axis_x[0] ** 2 + axis_y[0] ** 2)
+    half_height = math.sqrt(axis_x[1] ** 2 + axis_y[1] ** 2)
+    return (
+        center_x - half_width,
+        center_y - half_height,
+        half_width * 2,
+        half_height * 2,
+    )
+
+
 # Regex patterns for parsing transform functions
 TRANSFORM_PATTERN = re.compile(
     r"(matrix|translate|scale|rotate|skewX|skewY)\s*\(([^)]+)\)",

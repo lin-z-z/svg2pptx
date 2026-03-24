@@ -19,7 +19,11 @@ from svg2pptx.parser.shapes import (
     PolylineShape,
 )
 from svg2pptx.geometry.units import px_to_emu
-from svg2pptx.geometry.transforms import Transform
+from svg2pptx.geometry.transforms import (
+    Transform,
+    transform_rect_to_bbox,
+    transform_ellipse_to_bbox,
+)
 
 
 def create_shape(
@@ -63,14 +67,19 @@ def create_rectangle(
     scale: float = 1.0,
 ) -> BaseShape:
     """Create a PowerPoint rectangle shape."""
-    # Apply transform to get actual position
-    x, y = rect.transform.apply(rect.x, rect.y)
-    
+    x, y, width_px, height_px = transform_rect_to_bbox(
+        rect.x,
+        rect.y,
+        rect.width,
+        rect.height,
+        rect.transform,
+    )
+
     # Convert to EMU with scale
     left = offset_x + px_to_emu(x * scale)
     top = offset_y + px_to_emu(y * scale)
-    width = px_to_emu(rect.width * scale)
-    height = px_to_emu(rect.height * scale)
+    width = px_to_emu(width_px * scale)
+    height = px_to_emu(height_px * scale)
 
     # Choose shape type based on corner radius
     if rect.rx > 0 or rect.ry > 0:
@@ -94,17 +103,26 @@ def create_oval(
 ) -> BaseShape:
     """Create a PowerPoint oval (ellipse/circle) shape."""
     if isinstance(oval, CircleShape):
-        cx, cy = oval.transform.apply(oval.cx, oval.cy)
-        rx = ry = oval.r
+        left_px, top_px, width_px, height_px = transform_ellipse_to_bbox(
+            oval.cx,
+            oval.cy,
+            oval.r,
+            oval.r,
+            oval.transform,
+        )
     else:
-        cx, cy = oval.transform.apply(oval.cx, oval.cy)
-        rx, ry = oval.rx, oval.ry
+        left_px, top_px, width_px, height_px = transform_ellipse_to_bbox(
+            oval.cx,
+            oval.cy,
+            oval.rx,
+            oval.ry,
+            oval.transform,
+        )
 
-    # Convert center + radius to left, top, width, height
-    left = offset_x + px_to_emu((cx - rx) * scale)
-    top = offset_y + px_to_emu((cy - ry) * scale)
-    width = px_to_emu(2 * rx * scale)
-    height = px_to_emu(2 * ry * scale)
+    left = offset_x + px_to_emu(left_px * scale)
+    top = offset_y + px_to_emu(top_px * scale)
+    width = px_to_emu(width_px * scale)
+    height = px_to_emu(height_px * scale)
 
     shape = shapes.add_shape(MSO_SHAPE.OVAL, left, top, width, height)
     apply_style(shape, oval.style)
