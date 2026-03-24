@@ -21,6 +21,13 @@
 - `max_shape_count = 57`
 - `max_freeform_points = 61`
 - `max_points_single_shape = 41`
+- `Week 7 Go/No-Go = No-Go`
+
+补充说明：
+
+- 上面的自动化统计只能说明“当前 fork 没有大量硬失败”，不能直接等价为“视觉已达接入门槛”
+- `2026-03-24` 的 PowerPoint 人工抽样复核表明，`slide_001`、`slide_002` 这类页面仍有明显文本布局和背景失真
+- 真实评审记录见 `docs/regression/week7_go_no_go_review_2026-03-24.md`
 
 ## 环境准备
 
@@ -149,6 +156,7 @@ artifacts/regression_runs/<timestamp>_<sample_set>/
 - 滤镜只覆盖当前样本中高频的阴影/发光近似；CSS `drop-shadow(...)`
   token 仍会进入 unsupported diagnostics
 - 文本框宽高仍带启发式，复杂页面需要 PowerPoint 人工视觉复核
+- `pattern/url(#...)` 仍可能触发大面积错误填充，当前不能把这类页面视为“可直接接入”
 
 ## 推荐验收顺序
 

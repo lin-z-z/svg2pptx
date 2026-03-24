@@ -99,8 +99,15 @@ conda run -n svg2pptx python scripts\diag_svg2pptx.py `
 - `max_freeform_points = 61`
 - `unsupported_style_item_count = 9`
 
+但要额外记住：
+
+- 这些数字只能说明自动化回归当前稳定，不等于已经通过 Week 7 接入评审
+- `2026-03-24` 的真实 PowerPoint 抽样复核结论是 `No-Go`
+- 具体原因见 `docs/regression/week7_go_no_go_review_2026-03-24.md`
+
 ## 9. 常见误区
 
 - `comparison_available = false` 不一定是 bug，第一次跑本来就没有上一轮
 - `low` 问题页不等于失败页，通常表示当前样本里仍存在已知限制或近似实现
 - 不要把 `risk_tags` 当成真实问题分级，它们是扫描风险提示，不是导出失败
+- `high 0 / medium 0` 也不等于“视觉已达标”，`slide_001` 和 `slide_002` 的 Week 7 抽样已经证明成功页/低风险页仍可能明显走样
