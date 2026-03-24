@@ -1,5 +1,6 @@
 """Tests for the main SVG to PPTX converter."""
 
+from xml.etree import ElementTree as ET
 import pytest
 from pathlib import Path
 import tempfile
@@ -12,6 +13,7 @@ from pptx.util import Emu
 
 from svg2pptx import svg_to_pptx, SVGConverter, Config
 from svg2pptx.geometry.units import px_to_emu
+from svg2pptx.parser.paths import parse_path
 from svg2pptx.pptx_writer.shapes import parse_hex_color
 from svg2pptx.pptx_writer.text import _estimate_span_width
 from svg2pptx.parser.svg_parser import TextSpan
@@ -420,6 +422,23 @@ class TestConvertFile:
         codes = {warning["code"] for warning in converter.config.render_warnings}
         assert "freeform-points-per-shape-overflow" in codes
         assert "freeform-points-per-page-overflow" in codes
+
+    def test_closed_path_drops_duplicate_closing_point_before_freeform_write(self):
+        """Closed path output should not emit one extra segment back to the start point."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+            <path d="M 10 10 C 70 0, 110 40, 110 80 L 20 100 Z" fill="#0E5A8A" />
+        </svg>"""
+        root = ET.fromstring(svg)
+        parsed = parse_path(root.find("{http://www.w3.org/2000/svg}path"))
+        assert parsed is not None
+        raw_points, is_closed = parsed.subpaths[0]
+        assert is_closed is True
+        assert raw_points[0] == raw_points[-1]
+
+        converter = SVGConverter(Config(curve_tolerance=1.0))
+        converter.convert_string(svg)
+
+        assert converter.config.render_metrics["freeform_points"] == len(raw_points) - 1
 
     def test_centered_cjk_title_gets_non_trivial_textbox_width(self):
         """Real centered Chinese titles should not collapse to latin-style width."""

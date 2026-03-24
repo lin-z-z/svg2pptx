@@ -57,7 +57,7 @@ svg_to_pptx("input.svg", "output.pptx", config=config)
 - `curve_tolerance` 越小，曲线采样越细，点数也会更多。
 - `preserve_groups=True` 现在会自动关闭 flatten，并输出 PowerPoint group。
 - grouped 导出建议和默认 flattened 链路对照复核一次，重点看卡片内部遮挡与文字覆盖。
-- path/freeform 曲线精度仍在继续优化，见 `SVG-150`。
+- 闭合 path 在写入 freeform 前会去掉重复 closing point，避免多写一段回到起点的冗余线段。
 
 ## 目录批量导出与结构化结果
 
@@ -146,7 +146,6 @@ artifacts/regression_runs/<timestamp>_<sample_set>/
 
 ## 当前已知限制
 
-- path/freeform 曲线几何精度还在继续收敛，见 `SVG-150`
 - 滤镜只覆盖当前样本中高频的阴影/发光近似；CSS `drop-shadow(...)`
   token 仍会进入 unsupported diagnostics
 - 文本框宽高仍带启发式，复杂页面需要 PowerPoint 人工视觉复核

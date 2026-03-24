@@ -13,6 +13,23 @@ from svg2pptx.geometry.units import px_to_emu
 from svg2pptx.pptx_writer.shapes import apply_style
 
 
+def _normalize_emu_points(
+    points: list[tuple[int, int]],
+    *,
+    is_closed: bool,
+) -> list[tuple[int, int]]:
+    """Drop consecutive duplicates and one repeated closing point before builder IO."""
+    normalized: list[tuple[int, int]] = []
+    for point in points:
+        if not normalized or point != normalized[-1]:
+            normalized.append(point)
+
+    if is_closed and len(normalized) > 1 and normalized[0] == normalized[-1]:
+        normalized.pop()
+
+    return normalized
+
+
 def create_freeform(
     shapes: SlideShapes,
     parsed_shape: Union[PolygonShape, PolylineShape, PathShape],
@@ -77,11 +94,13 @@ def create_freeform_from_points(
         (px_to_emu(x * scale), px_to_emu(y * scale))
         for x, y in transformed_points
     ]
-    if config is not None:
-        config.note_freeform_points(len(emu_points), type(parsed_shape).__name__)
-
     # Determine if closed
     is_closed = isinstance(parsed_shape, PolygonShape)
+    emu_points = _normalize_emu_points(emu_points, is_closed=is_closed)
+    if len(emu_points) < 2:
+        return None
+    if config is not None:
+        config.note_freeform_points(len(emu_points), type(parsed_shape).__name__)
 
     # Create freeform using FreeformBuilder
     first_x, first_y = emu_points[0]
@@ -130,46 +149,43 @@ def create_freeform_from_path(
     if not path.subpaths:
         return None
 
-    # Get the first subpath to start the builder
-    first_subpath_points, first_closed = path.subpaths[0]
-    if len(first_subpath_points) < 2:
+    prepared_subpaths: list[tuple[list[tuple[int, int]], bool]] = []
+    for subpath_points, is_closed in path.subpaths:
+        if len(subpath_points) < 2:
+            continue
+        transformed = path.transform.apply_to_points(subpath_points)
+        emu_points = [
+            (px_to_emu(x * scale), px_to_emu(y * scale))
+            for x, y in transformed
+        ]
+        emu_points = _normalize_emu_points(emu_points, is_closed=is_closed)
+        if len(emu_points) < 2:
+            continue
+        prepared_subpaths.append((emu_points, is_closed))
+
+    if not prepared_subpaths:
         return None
 
-    # Apply transform to first point
-    transformed_first = path.transform.apply_to_points(first_subpath_points)
-    first_x = px_to_emu(transformed_first[0][0] * scale)
-    first_y = px_to_emu(transformed_first[0][1] * scale)
+    # Get the first subpath to start the builder
+    first_subpath_points, first_closed = prepared_subpaths[0]
+    first_x, first_y = first_subpath_points[0]
 
     # Start the freeform builder
     builder = shapes.build_freeform(first_x, first_y)
 
     # Add segments for first subpath
-    emu_points = [
-        (px_to_emu(x * scale), px_to_emu(y * scale))
-        for x, y in transformed_first[1:]
-    ]
-    builder.add_line_segments(emu_points, close=first_closed)
-    total_points = len(transformed_first)
+    builder.add_line_segments(first_subpath_points[1:], close=first_closed)
+    total_points = len(first_subpath_points)
 
     # Add additional subpaths using move_to
-    for subpath_points, is_closed in path.subpaths[1:]:
-        if len(subpath_points) < 2:
-            continue
-
-        transformed = path.transform.apply_to_points(subpath_points)
-        
+    for emu_points, is_closed in prepared_subpaths[1:]:
         # Move to start of new subpath
-        start_x = px_to_emu(transformed[0][0] * scale)
-        start_y = px_to_emu(transformed[0][1] * scale)
+        start_x, start_y = emu_points[0]
         builder.move_to(start_x, start_y)
 
         # Add line segments
-        emu_points = [
-            (px_to_emu(x * scale), px_to_emu(y * scale))
-            for x, y in transformed[1:]
-        ]
-        builder.add_line_segments(emu_points, close=is_closed)
-        total_points += len(transformed)
+        builder.add_line_segments(emu_points[1:], close=is_closed)
+        total_points += len(emu_points)
 
     # Convert to shape
     shape = builder.convert_to_shape(offset_x, offset_y)
