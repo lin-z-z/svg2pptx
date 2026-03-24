@@ -128,6 +128,7 @@ class SVGConverter:
     def _create_presentation(self, svg_doc: SVGDocument) -> Presentation:
         """Create a new presentation and add the SVG content."""
         self.config.reset_runtime_reports()
+        self.config.page_background = self._detect_page_background(svg_doc)
         prs = Presentation()
 
         # Set slide dimensions
@@ -155,6 +156,31 @@ class SVGConverter:
         )
 
         return prs
+
+    def _detect_page_background(self, svg_doc: SVGDocument) -> str:
+        """Infer one page background color from a full-canvas solid rectangle."""
+        for element in svg_doc.elements:
+            if not isinstance(element, ParsedShape):
+                continue
+            if element.shape_type != "rect":
+                continue
+            if element.style.fill in ("", "none"):
+                continue
+            if element.style.fill_gradient is not None:
+                continue
+            if abs(getattr(element.transform, "b", 0.0)) > 1e-6:
+                continue
+            if abs(getattr(element.transform, "c", 0.0)) > 1e-6:
+                continue
+            if (
+                abs(getattr(element, "x", 0.0)) <= 1e-6
+                and abs(getattr(element, "y", 0.0)) <= 1e-6
+                and abs(getattr(element, "width", 0.0) - svg_doc.width) <= 1e-3
+                and abs(getattr(element, "height", 0.0) - svg_doc.height) <= 1e-3
+                and element.style.effective_fill_opacity >= 0.999
+            ):
+                return element.style.fill
+        return "#FFFFFF"
 
     def _calculate_scale(self, svg_doc: SVGDocument) -> float:
         """Calculate scale factor to fit SVG into slide."""

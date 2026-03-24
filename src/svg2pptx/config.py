@@ -46,6 +46,7 @@ class Config:
     disable_shadows: bool = True
     convert_text: bool = True
     convert_shapes: bool = True
+    page_background: str = "#FFFFFF"
     # Guardrails stay comfortably above the current full_15 peaks: 57 / 61 / 41.
     max_shapes_per_page: int = 250
     max_freeform_points_per_page: int = 600
@@ -82,6 +83,7 @@ class Config:
 
     def reset_runtime_reports(self) -> None:
         """Clear per-conversion diagnostic output."""
+        self.page_background = "#FFFFFF"
         self.unsupported_styles.clear()
         self.gradient_stats = {
             "linear_applied": 0,

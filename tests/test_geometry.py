@@ -159,7 +159,7 @@ class TestTransform:
         transforms = [Transform.translate(10, 0), Transform.scale(2)]
         composed = compose_transforms(transforms)
         x, y = composed.apply(5, 0)
-        assert x == 30
+        assert x == 20
         assert y == 0
 
     def test_transform_rect_to_bbox_scales_nested_group_geometry(self):
@@ -173,8 +173,8 @@ class TestTransform:
         assert height == 30
 
     def test_transform_ellipse_to_bbox_handles_scale_and_translate(self):
-        transform = Transform.translate(10, 20).compose(
-            Transform.scale(2, 3)
+        transform = compose_transforms(
+            [Transform.translate(10, 20), Transform.scale(2, 3)]
         )
         left, top, width, height = transform_ellipse_to_bbox(
             20, 10, 5, 4, transform

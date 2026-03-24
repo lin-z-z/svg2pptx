@@ -304,10 +304,21 @@ def _apply_fill_format(fill, style: Style, config: Optional[Config]) -> None:
         return
 
     if style.fill_gradient is not None:
-        if _should_fallback_to_solid_fill(style.fill_gradient):
+        fallback_color = _gradient_fallback_color(style.fill_gradient, style, config)
+        if _should_fallback_to_solid_fill(style.fill_gradient, style, config):
             if config is not None:
                 config.note_gradient_degraded()
+            if fallback_color is not None:
+                fill.solid()
+                fill.fore_color.rgb = parse_hex_color(fallback_color)
+                return
         elif _apply_gradient_fill(fill._xPr, style.fill_gradient, style, config):
+            return
+        elif fallback_color is not None:
+            if config is not None:
+                config.note_gradient_degraded()
+            fill.solid()
+            fill.fore_color.rgb = parse_hex_color(fallback_color)
             return
 
     try:
@@ -360,15 +371,18 @@ def _apply_gradient_fill(
             container.remove(child)
 
     grad_fill = OxmlElement("a:gradFill")
+    grad_fill.set("flip", "none")
     grad_fill.set("rotWithShape", "1")
     gs_list = OxmlElement("a:gsLst")
     for stop in gradient.stops:
         gs = OxmlElement("a:gs")
         gs.set("pos", str(int(round(max(0.0, min(stop.offset, 1.0)) * 100000))))
         color_node = OxmlElement("a:srgbClr")
-        color_node.set("val", parse_hex_color_to_str(stop.color))
         stop_opacity = stop.opacity * style.fill_opacity * style.opacity
-        _append_alpha(color_node, stop_opacity)
+        blended_color = _gradient_stop_visible_color(stop.color, stop_opacity, config)
+        color_node.set("val", parse_hex_color_to_str(blended_color))
+        if blended_color.strip().upper() == stop.color.strip().upper():
+            _append_alpha(color_node, stop_opacity)
         gs.append(color_node)
         gs_list.append(gs)
     grad_fill.append(gs_list)
@@ -394,37 +408,153 @@ def _apply_gradient_fill(
             "radial-gradient-simplified",
             source="shape",
         )
+    grad_fill.append(OxmlElement("a:tileRect"))
 
-    container.append(grad_fill)
+    _insert_fill_node(container, grad_fill)
     return True
 
 
-def _should_fallback_to_solid_fill(gradient: GradientSpec) -> bool:
+def _should_fallback_to_solid_fill(
+    gradient: GradientSpec,
+    style: Style,
+    config: Optional[Config],
+) -> bool:
     """Avoid PowerPoint blue-casting on near-white, low-contrast gradients."""
     if len(gradient.stops) < 2:
         return True
 
-    channel_values: list[tuple[int, int, int]] = []
+    visible_colors: list[tuple[int, int, int]] = []
+    effective_opacities: list[float] = []
+    background_rgb = _page_background_rgb(config)
     for stop in gradient.stops:
-        color = stop.color.strip().lstrip("#")
-        if len(color) != 6:
+        rgb = _parse_rgb_triplet(stop.color)
+        if rgb is None:
             return False
-        channel_values.append(
-            (
-                int(color[0:2], 16),
-                int(color[2:4], 16),
-                int(color[4:6], 16),
-            )
+        effective_opacity = max(
+            0.0, min(stop.opacity * style.fill_opacity * style.opacity, 1.0)
+        )
+        effective_opacities.append(effective_opacity)
+        visible_colors.append(
+            _blend_rgb_over_background(rgb, effective_opacity, background_rgb)
         )
 
-    min_channel = min(min(rgb) for rgb in channel_values)
+    if max(effective_opacities, default=1.0) < 0.25:
+        return False
+
+    min_channel = min(min(rgb) for rgb in visible_colors)
     max_delta = max(
         abs(a - b)
-        for rgb_a in channel_values
-        for rgb_b in channel_values
+        for rgb_a in visible_colors
+        for rgb_b in visible_colors
         for a, b in zip(rgb_a, rgb_b)
     )
     return min_channel >= 0xE8 and max_delta <= 0x18
+
+
+def _gradient_fallback_color(
+    gradient: GradientSpec,
+    style: Style,
+    config: Optional[Config] = None,
+) -> Optional[str]:
+    """Approximate the final visible gradient as one opaque solid color."""
+    if not gradient.stops:
+        return None
+
+    stops = sorted(gradient.stops, key=lambda stop: stop.offset)
+    background_rgb = _page_background_rgb(config)
+    accum = [0.0, 0.0, 0.0]
+    total_weight = 0.0
+    for idx, stop in enumerate(stops):
+        rgb = _parse_rgb_triplet(stop.color)
+        if rgb is None:
+            return None
+        effective_opacity = max(
+            0.0, min(stop.opacity * style.fill_opacity * style.opacity, 1.0)
+        )
+        visible_rgb = _blend_rgb_over_background(rgb, effective_opacity, background_rgb)
+        weight = _gradient_stop_weight(stops, idx)
+        total_weight += weight
+        for channel_index, value in enumerate(visible_rgb):
+            accum[channel_index] += value * weight
+
+    if total_weight <= 0:
+        fallback_rgb = _blend_rgb_over_background(
+            _parse_rgb_triplet(stops[0].color) or (255, 255, 255),
+            max(0.0, min(stops[0].opacity * style.fill_opacity * style.opacity, 1.0)),
+            background_rgb,
+        )
+    else:
+        fallback_rgb = tuple(
+            int(round(channel / total_weight)) for channel in accum
+        )
+    return "#{:02X}{:02X}{:02X}".format(*fallback_rgb)
+
+
+def _gradient_stop_weight(stops: list, index: int) -> float:
+    """Trapezoid-style weight for one stop across a 0..1 gradient span."""
+    if len(stops) == 1:
+        return 1.0
+    prev_offset = 0.0 if index == 0 else max(0.0, min(stops[index - 1].offset, 1.0))
+    next_offset = (
+        1.0
+        if index == len(stops) - 1
+        else max(0.0, min(stops[index + 1].offset, 1.0))
+    )
+    return max((next_offset - prev_offset) / 2.0, 0.0)
+
+
+def _parse_rgb_triplet(color: str) -> Optional[tuple[int, int, int]]:
+    """Parse a strict hex color token into one RGB tuple."""
+    normalized = parse_hex_color_to_str(color)
+    if len(normalized) != 6:
+        return None
+    return (
+        int(normalized[0:2], 16),
+        int(normalized[2:4], 16),
+        int(normalized[4:6], 16),
+    )
+
+
+def _blend_rgb_over_white(
+    rgb: tuple[int, int, int], opacity: float
+) -> tuple[int, int, int]:
+    """Composite one RGB color onto a white page background."""
+    return _blend_rgb_over_background(rgb, opacity, (255, 255, 255))
+
+
+def _blend_rgb_over_background(
+    rgb: tuple[int, int, int],
+    opacity: float,
+    background_rgb: tuple[int, int, int],
+) -> tuple[int, int, int]:
+    """Composite one RGB color onto one resolved page background."""
+    clamped = max(0.0, min(opacity, 1.0))
+    return tuple(
+        int(round(background * (1.0 - clamped) + channel * clamped))
+        for channel, background in zip(rgb, background_rgb)
+    )
+
+
+def _gradient_stop_visible_color(
+    color: str,
+    opacity: float,
+    config: Optional[Config],
+) -> str:
+    """Convert one potentially translucent stop into the visible page color."""
+    if opacity >= 0.9999:
+        return color
+    rgb = _parse_rgb_triplet(color)
+    if rgb is None:
+        return color
+    blended = _blend_rgb_over_background(rgb, opacity, _page_background_rgb(config))
+    return "#{:02X}{:02X}{:02X}".format(*blended)
+
+
+def _page_background_rgb(config: Optional[Config]) -> tuple[int, int, int]:
+    """Resolve the current page background for color precompositing."""
+    token = "#FFFFFF" if config is None else getattr(config, "page_background", "#FFFFFF")
+    rgb = _parse_rgb_triplet(token)
+    return rgb or (255, 255, 255)
 
 
 def _build_outer_shadow(effect: FilterSpec, style: Style):
@@ -528,6 +658,23 @@ def _linear_gradient_angle(gradient: GradientSpec) -> int:
         return 0
     degrees = math.degrees(math.atan2(dy, dx)) % 360.0
     return int(round(degrees * 60000))
+
+
+def _insert_fill_node(container, fill_node) -> None:
+    """Insert one fill node before line/effect children to satisfy PowerPoint."""
+    line_node = container.find(qn("a:ln"))
+    if line_node is not None:
+        line_index = list(container).index(line_node)
+        container.insert(line_index, fill_node)
+        return
+
+    effect_node = container.find(qn("a:effectLst"))
+    if effect_node is not None:
+        effect_index = list(container).index(effect_node)
+        container.insert(effect_index, fill_node)
+        return
+
+    container.append(fill_node)
 
 
 def _vector_angle(dx: float, dy: float) -> int:

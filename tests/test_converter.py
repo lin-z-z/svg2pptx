@@ -334,20 +334,24 @@ class TestConvertFile:
         stops = grad_fill.find(qn("a:gsLst"))
         assert len(stops) == 2
         assert stops[0].get("pos") == "0"
-        assert stops[0][0].get("val") == "0E5A8A"
-        assert stops[0][0].find(qn("a:alpha")).get("val") == "20000"
+        assert stops[0][0].get("val") == "CFDEE8"
+        assert stops[0][0].find(qn("a:alpha")) is None
+        assert stops[1][0].get("val") == "1E88E5"
 
         linear = grad_fill.find(qn("a:lin"))
         assert linear is not None
         assert linear.get("ang") == "0"
+        assert grad_fill.find(qn("a:tileRect")) is not None
+        sppr_children = [child.tag for child in shape.fill._xPr]
+        assert sppr_children.index(qn("a:gradFill")) < sppr_children.index(qn("a:ln"))
 
     def test_shape_writer_degrades_near_white_gradient_to_solid_fill(self):
         """Low-contrast near-white gradients should fall back to solid fill."""
         svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
             <defs>
                 <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#F8FCFF" />
-                    <stop offset="100%" stop-color="#FFFFFF" />
+                    <stop offset="0%" stop-color="#FFFFFF" />
+                    <stop offset="100%" stop-color="#F0F7FF" />
                 </linearGradient>
             </defs>
             <rect x="20" y="10" width="100" height="50" fill="url(#bgGrad)" />
@@ -360,8 +364,35 @@ class TestConvertFile:
         assert shape.fill._xPr.find(qn("a:gradFill")) is None
         solid_fill = shape.fill._xPr.find(qn("a:solidFill"))
         assert solid_fill is not None
-        assert solid_fill[0].get("val") == "F8FCFF"
+        assert solid_fill[0].get("val") == "F8FBFF"
         assert converter.config.gradient_stats["degraded"] == 1
+
+    def test_shape_writer_preblends_translucent_gradient_stops_against_page_background(
+        self,
+    ):
+        """Translucent gradients should keep geometry but use visible stop colors."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <rect width="200" height="120" fill="#F8FCFF" />
+            <defs>
+                <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0E5A8A" stop-opacity="0.05" />
+                    <stop offset="100%" stop-color="#0E5A8A" stop-opacity="0.15" />
+                </linearGradient>
+            </defs>
+            <rect x="20" y="10" width="100" height="50" fill="url(#heroGrad)" opacity="0.4" />
+        </svg>"""
+
+        converter = SVGConverter()
+        prs = converter.convert_string(svg)
+        shape = prs.slides[0].shapes[1]
+
+        grad_fill = shape.fill._xPr.find(qn("a:gradFill"))
+        assert grad_fill is not None
+        stops = grad_fill.find(qn("a:gsLst"))
+        assert [stop[0].get("val") for stop in stops] == ["F3F9FD", "EAF2F8"]
+        assert stops[0][0].find(qn("a:alpha")) is None
+        assert stops[1][0].find(qn("a:alpha")) is None
+        assert converter.config.gradient_stats["linear_applied"] == 1
 
     def test_shape_writer_maps_drop_shadow_filter_to_outer_shadow(self):
         """Supported shadow filters should become DrawingML outerShdw effects."""

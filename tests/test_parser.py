@@ -211,14 +211,14 @@ class TestParseTransform:
     def test_multiple_transforms(self):
         t = parse_transform("translate(10, 0) scale(2)")
         x, y = t.apply(5, 0)
-        assert x == 30
+        assert x == 20
         assert y == 0
 
     def test_translate_then_rotate_uses_svg_order(self):
         t = parse_transform("translate(100, 100) rotate(45)")
         x, y = t.apply(0, 0)
-        assert abs(x - 0) < 0.0001
-        assert abs(y - 141.4213562373) < 0.0001
+        assert abs(x - 100) < 0.0001
+        assert abs(y - 100) < 0.0001
 
 
 class TestParsePoints:

@@ -135,8 +135,8 @@ def compose_transforms(transforms: list[Transform]) -> Transform:
     """
     result = Transform.identity()
     for t in transforms:
-        # SVG transform lists are applied from left to right as written.
-        result = t.compose(result)
+        # SVG transform lists are applied right-to-left as matrices multiply.
+        result = result.compose(t)
     return result
 
 
