@@ -65,9 +65,44 @@ RGBA_PATTERN = re.compile(
 # Pattern for gradient references like url(#gradientId)
 URL_REF_PATTERN = re.compile(r"url\s*\(\s*#([^)]+)\s*\)", re.IGNORECASE)
 
-# Global registry for gradient/pattern colors extracted from <defs>
-# Maps gradient/pattern ID to a fallback solid color
+
+@dataclass
+class GradientStop:
+    """One gradient stop resolved from SVG defs."""
+
+    offset: float
+    color: str
+    opacity: float = 1.0
+
+
+@dataclass
+class GradientSpec:
+    """Resolved SVG gradient definition used by the writer layer."""
+
+    gradient_id: str
+    kind: str
+    stops: list[GradientStop] = field(default_factory=list)
+    x1: float = 0.0
+    y1: float = 0.0
+    x2: float = 1.0
+    y2: float = 0.0
+    cx: float = 0.5
+    cy: float = 0.5
+    fx: Optional[float] = None
+    fy: Optional[float] = None
+    r: float = 0.5
+
+    @property
+    def fallback_color(self) -> str:
+        """Return the first stop color as a safe solid fallback."""
+        if not self.stops:
+            return "none"
+        return self.stops[0].color
+
+
+# Global registries for gradient parsing.
 _gradient_colors: dict[str, str] = {}
+_gradient_specs: dict[str, GradientSpec] = {}
 
 
 @dataclass
@@ -100,6 +135,8 @@ class Style:
     font_weight: str = "normal"
     letter_spacing: float = 0.0
     text_anchor: str = "start"
+    fill_gradient: Optional[GradientSpec] = None
+    stroke_gradient: Optional[GradientSpec] = None
     unsupported_styles: list[dict[str, str]] = field(default_factory=list)
 
     def with_parent(self, parent: "Style") -> "Style":
@@ -136,6 +173,8 @@ class Style:
                 if self.text_anchor != "inherit"
                 else parent.text_anchor
             ),
+            fill_gradient=self.fill_gradient or parent.fill_gradient,
+            stroke_gradient=self.stroke_gradient or parent.stroke_gradient,
         )
 
     @property
@@ -175,6 +214,7 @@ class Style:
 def clear_gradient_registry() -> None:
     """Clear the gradient color registry. Call before parsing a new SVG."""
     _gradient_colors.clear()
+    _gradient_specs.clear()
 
 
 def register_gradient_color(gradient_id: str, color: str) -> None:
@@ -186,6 +226,13 @@ def register_gradient_color(gradient_id: str, color: str) -> None:
         color: The fallback color (hex format).
     """
     _gradient_colors[gradient_id] = color
+
+
+def register_gradient(gradient: GradientSpec) -> None:
+    """Register a resolved gradient definition and its fallback color."""
+    _gradient_specs[gradient.gradient_id] = gradient
+    if gradient.fallback_color != "none":
+        register_gradient_color(gradient.gradient_id, gradient.fallback_color)
 
 
 def get_gradient_color(gradient_id: str) -> Optional[str]:
@@ -201,6 +248,11 @@ def get_gradient_color(gradient_id: str) -> Optional[str]:
     return _gradient_colors.get(gradient_id)
 
 
+def get_gradient(gradient_id: str) -> Optional[GradientSpec]:
+    """Get a resolved gradient definition by ID."""
+    return _gradient_specs.get(gradient_id)
+
+
 def parse_gradients_from_defs(defs_element) -> None:
     """
     Parse gradient definitions from a <defs> element and register their colors.
@@ -211,48 +263,159 @@ def parse_gradients_from_defs(defs_element) -> None:
     Args:
         defs_element: ElementTree element representing the <defs> section.
     """
+    gradients: dict[str, object] = {}
     for child in defs_element:
-        # Get tag name without namespace
         tag = child.tag
         if "}" in tag:
             tag = tag.split("}")[-1]
         tag = tag.lower()
-
         if tag in ("lineargradient", "radialgradient"):
             grad_id = child.get("id")
-            if not grad_id:
-                continue
+            if grad_id:
+                gradients[grad_id] = child
 
-            # Find the first <stop> element and get its color
-            for stop in child:
-                stop_tag = stop.tag
-                if "}" in stop_tag:
-                    stop_tag = stop_tag.split("}")[-1]
+    resolved: dict[str, GradientSpec] = {}
+    resolving: set[str] = set()
+    for gradient_id in gradients:
+        gradient = _resolve_gradient(gradient_id, gradients, resolved, resolving)
+        if gradient is not None:
+            register_gradient(gradient)
 
-                if stop_tag.lower() == "stop":
-                    # Try to get color from style attribute
-                    style_attr = stop.get("style", "")
-                    stop_color = None
 
-                    # Parse style attribute for stop-color
-                    for declaration in style_attr.split(";"):
-                        declaration = declaration.strip()
-                        if ":" in declaration:
-                            prop, value = declaration.split(":", 1)
-                            if prop.strip().lower() == "stop-color":
-                                stop_color = value.strip()
-                                break
+def _resolve_gradient(
+    gradient_id: str,
+    gradients: dict[str, object],
+    resolved: dict[str, GradientSpec],
+    resolving: set[str],
+) -> Optional[GradientSpec]:
+    """Resolve one gradient definition, following href chains when present."""
+    if gradient_id in resolved:
+        return resolved[gradient_id]
+    if gradient_id in resolving:
+        return None
 
-                    # Fallback to stop-color attribute
-                    if not stop_color:
-                        stop_color = stop.get("stop-color")
+    element = gradients.get(gradient_id)
+    if element is None:
+        return None
 
-                    if stop_color:
-                        # Parse and register the color
-                        parsed = _parse_color_value(stop_color)
-                        if parsed and parsed != "none":
-                            register_gradient_color(grad_id, parsed)
-                            break  # Use first stop color
+    resolving.add(gradient_id)
+    tag = element.tag
+    if "}" in tag:
+        tag = tag.split("}")[-1]
+    kind = tag.lower().replace("gradient", "")
+
+    href = (
+        element.get("href")
+        or element.get("{http://www.w3.org/1999/xlink}href")
+        or ""
+    ).strip()
+    base_gradient = None
+    if href.startswith("#"):
+        base_gradient = _resolve_gradient(
+            href[1:],
+            gradients,
+            resolved,
+            resolving,
+        )
+
+    gradient = GradientSpec(
+        gradient_id=gradient_id,
+        kind=kind,
+    )
+    if base_gradient is not None:
+        gradient = GradientSpec(
+            gradient_id=gradient_id,
+            kind=base_gradient.kind,
+            stops=list(base_gradient.stops),
+            x1=base_gradient.x1,
+            y1=base_gradient.y1,
+            x2=base_gradient.x2,
+            y2=base_gradient.y2,
+            cx=base_gradient.cx,
+            cy=base_gradient.cy,
+            fx=base_gradient.fx,
+            fy=base_gradient.fy,
+            r=base_gradient.r,
+        )
+
+    if gradient.kind == "linear":
+        gradient.x1 = _parse_gradient_number(element.get("x1"), gradient.x1)
+        gradient.y1 = _parse_gradient_number(element.get("y1"), gradient.y1)
+        gradient.x2 = _parse_gradient_number(element.get("x2"), gradient.x2)
+        gradient.y2 = _parse_gradient_number(element.get("y2"), gradient.y2)
+    elif gradient.kind == "radial":
+        gradient.cx = _parse_gradient_number(element.get("cx"), gradient.cx)
+        gradient.cy = _parse_gradient_number(element.get("cy"), gradient.cy)
+        gradient.fx = _parse_gradient_number(element.get("fx"), gradient.fx or gradient.cx)
+        gradient.fy = _parse_gradient_number(element.get("fy"), gradient.fy or gradient.cy)
+        gradient.r = _parse_gradient_number(element.get("r"), gradient.r)
+
+    stops = _parse_gradient_stops(element)
+    if stops:
+        gradient.stops = stops
+
+    if not gradient.stops:
+        gradient.stops = [
+            GradientStop(offset=0.0, color="#000000", opacity=1.0),
+            GradientStop(offset=1.0, color="#000000", opacity=1.0),
+        ]
+
+    resolved[gradient_id] = gradient
+    resolving.remove(gradient_id)
+    return gradient
+
+
+def _parse_gradient_number(value: Optional[str], default: float) -> float:
+    """Parse objectBoundingBox gradient coordinates expressed as 0..1 or percent."""
+    if value is None:
+        return default
+
+    raw = value.strip()
+    if not raw:
+        return default
+
+    try:
+        if raw.endswith("%"):
+            return float(raw[:-1]) / 100.0
+        return float(raw)
+    except ValueError:
+        return default
+
+
+def _parse_gradient_stops(element) -> list[GradientStop]:
+    """Parse stop nodes from one gradient definition."""
+    stops: list[GradientStop] = []
+    for stop in element:
+        tag = stop.tag
+        if "}" in tag:
+            tag = tag.split("}")[-1]
+        if tag.lower() != "stop":
+            continue
+
+        style_dict = parse_style_attribute(stop.get("style", ""))
+        color_token = style_dict.get("stop-color", stop.get("stop-color", "#000000"))
+        color = _parse_color_value(color_token)
+        opacity_token = style_dict.get("stop-opacity", stop.get("stop-opacity", "1"))
+        opacity = 1.0
+        try:
+            opacity = float(opacity_token)
+        except ValueError:
+            opacity = 1.0
+
+        embedded_alpha = parse_color_alpha(color_token)
+        if embedded_alpha is not None:
+            opacity *= embedded_alpha
+
+        offset = _parse_gradient_number(stop.get("offset"), 0.0)
+        stops.append(
+            GradientStop(
+                offset=max(0.0, min(offset, 1.0)),
+                color=color,
+                opacity=max(0.0, min(opacity, 1.0)),
+            )
+        )
+
+    return stops
 
 
 def _parse_color_value(color_str: str) -> str:
@@ -463,6 +626,8 @@ def parse_style(
             font_weight=parent_style.font_weight,
             letter_spacing=parent_style.letter_spacing,
             text_anchor=parent_style.text_anchor,
+            fill_gradient=parent_style.fill_gradient,
+            stroke_gradient=parent_style.stroke_gradient,
             unsupported_styles=list(parent_style.unsupported_styles),
         )
     else:
@@ -487,17 +652,23 @@ def parse_style(
     fill_val = get_attr("fill")
     if fill_val is not None:
         style.clear_unsupported_style("fill")
+        style.fill_gradient = None
         style.fill = parse_color(fill_val)
         fill_alpha = parse_color_alpha(fill_val)
         if fill_alpha is not None:
             style.fill_opacity *= fill_alpha
         fill_ref = URL_REF_PATTERN.match(fill_val.strip())
         if fill_ref:
-            style.record_unsupported_style(
-                "fill",
-                fill_val.strip(),
-                "url-paint-fallback",
-            )
+            gradient = get_gradient(fill_ref.group(1))
+            if gradient is not None:
+                style.fill_gradient = gradient
+                style.fill = gradient.fallback_color
+            else:
+                style.record_unsupported_style(
+                    "fill",
+                    fill_val.strip(),
+                    "unresolved-url-reference",
+                )
         elif style.fill not in ("none",) and not style.fill.startswith("#"):
             style.record_unsupported_style(
                 "fill",
@@ -517,17 +688,28 @@ def parse_style(
     stroke_val = get_attr("stroke")
     if stroke_val is not None:
         style.clear_unsupported_style("stroke")
+        style.stroke_gradient = None
         style.stroke = parse_color(stroke_val)
         stroke_alpha = parse_color_alpha(stroke_val)
         if stroke_alpha is not None:
             style.stroke_opacity *= stroke_alpha
         stroke_ref = URL_REF_PATTERN.match(stroke_val.strip())
         if stroke_ref:
-            style.record_unsupported_style(
-                "stroke",
-                stroke_val.strip(),
-                "url-paint-fallback",
-            )
+            gradient = get_gradient(stroke_ref.group(1))
+            if gradient is not None:
+                style.stroke_gradient = gradient
+                style.stroke = gradient.fallback_color
+                style.record_unsupported_style(
+                    "stroke",
+                    stroke_val.strip(),
+                    "gradient-stroke-fallback",
+                )
+            else:
+                style.record_unsupported_style(
+                    "stroke",
+                    stroke_val.strip(),
+                    "unresolved-url-reference",
+                )
         elif style.stroke not in ("none",) and not style.stroke.startswith("#"):
             style.record_unsupported_style(
                 "stroke",

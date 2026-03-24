@@ -50,10 +50,23 @@ class Config:
         default_factory=list,
         repr=False,
     )
+    gradient_stats: dict[str, int] = field(
+        default_factory=lambda: {
+            "linear_applied": 0,
+            "radial_applied": 0,
+            "degraded": 0,
+        },
+        repr=False,
+    )
 
     def reset_runtime_reports(self) -> None:
         """Clear per-conversion diagnostic output."""
         self.unsupported_styles.clear()
+        self.gradient_stats = {
+            "linear_applied": 0,
+            "radial_applied": 0,
+            "degraded": 0,
+        }
 
     def record_unsupported_style(
         self,
@@ -72,4 +85,13 @@ class Config:
             item["source"] = source
         if item not in self.unsupported_styles:
             self.unsupported_styles.append(item)
+
+    def note_gradient_applied(self, kind: str) -> None:
+        """Count a gradient fill that was emitted to DrawingML."""
+        key = f"{kind}_applied"
+        self.gradient_stats[key] = self.gradient_stats.get(key, 0) + 1
+
+    def note_gradient_degraded(self) -> None:
+        """Count a gradient that had to fall back or simplify."""
+        self.gradient_stats["degraded"] = self.gradient_stats.get("degraded", 0) + 1
 

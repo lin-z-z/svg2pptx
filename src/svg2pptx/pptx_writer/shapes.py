@@ -1,5 +1,6 @@
 """PowerPoint shape creation utilities."""
 
+import math
 from typing import Optional
 
 from pptx.shapes.base import BaseShape
@@ -11,7 +12,7 @@ from pptx.oxml.ns import qn
 from pptx.oxml.xmlchemy import OxmlElement
 
 from svg2pptx.config import Config
-from svg2pptx.parser.styles import Style
+from svg2pptx.parser.styles import GradientSpec, Style
 from svg2pptx.parser.shapes import (
     ParsedShape,
     RectShape,
@@ -244,6 +245,10 @@ def _apply_fill_format(fill, style: Style, config: Optional[Config]) -> None:
         fill.background()
         return
 
+    if style.fill_gradient is not None:
+        if _apply_gradient_fill(fill._xPr, style.fill_gradient, style, config):
+            return
+
     try:
         color = parse_hex_color(style.fill)
     except ValueError:
@@ -260,6 +265,77 @@ def _apply_fill_format(fill, style: Style, config: Optional[Config]) -> None:
     fill.solid()
     fill.fore_color.rgb = color
     _apply_opacity_to_solid_fill(fill._xPr, style.effective_fill_opacity)
+
+
+def _apply_gradient_fill(
+    container,
+    gradient: GradientSpec,
+    style: Style,
+    config: Optional[Config],
+) -> bool:
+    """Apply a gradient fill to the shape property XML."""
+    if gradient.kind not in {"linear", "radial"}:
+        _record_runtime_unsupported(
+            config,
+            "fill",
+            f"url(#{gradient.gradient_id})",
+            "unsupported-gradient-kind",
+            source="shape",
+        )
+        if config is not None:
+            config.note_gradient_degraded()
+        return False
+
+    for tag in (
+        "a:solidFill",
+        "a:gradFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:blipFill",
+        "a:grpFill",
+    ):
+        child = container.find(qn(tag))
+        if child is not None:
+            container.remove(child)
+
+    grad_fill = OxmlElement("a:gradFill")
+    grad_fill.set("rotWithShape", "1")
+    gs_list = OxmlElement("a:gsLst")
+    for stop in gradient.stops:
+        gs = OxmlElement("a:gs")
+        gs.set("pos", str(int(round(max(0.0, min(stop.offset, 1.0)) * 100000))))
+        color_node = OxmlElement("a:srgbClr")
+        color_node.set("val", parse_hex_color_to_str(stop.color))
+        stop_opacity = stop.opacity * style.fill_opacity * style.opacity
+        _append_alpha(color_node, stop_opacity)
+        gs.append(color_node)
+        gs_list.append(gs)
+    grad_fill.append(gs_list)
+
+    if gradient.kind == "linear":
+        linear = OxmlElement("a:lin")
+        linear.set("ang", str(_linear_gradient_angle(gradient)))
+        linear.set("scaled", "1")
+        grad_fill.append(linear)
+        if config is not None:
+            config.note_gradient_applied("linear")
+    else:
+        path = OxmlElement("a:path")
+        path.set("path", "circle")
+        grad_fill.append(path)
+        if config is not None:
+            config.note_gradient_applied("radial")
+            config.note_gradient_degraded()
+        _record_runtime_unsupported(
+            config,
+            "fill",
+            f"url(#{gradient.gradient_id})",
+            "radial-gradient-simplified",
+            source="shape",
+        )
+
+    container.append(grad_fill)
+    return True
 
 
 def _apply_line_format(line_format, style: Style, config: Optional[Config]) -> None:
@@ -294,6 +370,11 @@ def _apply_opacity_to_solid_fill(container, opacity: float) -> None:
         return
 
     color_choice = solid_fill[0]
+    _append_alpha(color_choice, opacity)
+
+
+def _append_alpha(color_choice, opacity: float) -> None:
+    """Replace or append DrawingML alpha on a color node."""
     for alpha in color_choice.findall(qn("a:alpha")):
         color_choice.remove(alpha)
 
@@ -304,6 +385,21 @@ def _apply_opacity_to_solid_fill(container, opacity: float) -> None:
     alpha = OxmlElement("a:alpha")
     alpha.set("val", str(int(round(clamped * 100000))))
     color_choice.append(alpha)
+
+
+def _linear_gradient_angle(gradient: GradientSpec) -> int:
+    """Map SVG linear gradient vector to DrawingML ang units (1/60000 deg)."""
+    dx = gradient.x2 - gradient.x1
+    dy = gradient.y2 - gradient.y1
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return 0
+    degrees = math.degrees(math.atan2(dy, dx)) % 360.0
+    return int(round(degrees * 60000))
+
+
+def parse_hex_color_to_str(hex_color: str) -> str:
+    """Normalize a hex color string to upper-case RRGGBB."""
+    return hex_color.strip().lstrip("#").upper()
 
 
 def _apply_corner_radius(

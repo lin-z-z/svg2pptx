@@ -97,13 +97,36 @@ class TestParseStyle:
         assert {
             "property": "fill",
             "value": "url(#grad1)",
-            "reason": "url-paint-fallback",
+            "reason": "unresolved-url-reference",
         } in style.unsupported_styles
         assert {
             "property": "stroke",
             "value": "url(#grad2)",
-            "reason": "url-paint-fallback",
+            "reason": "unresolved-url-reference",
         } in style.unsupported_styles
+
+    def test_svg_parser_resolves_gradient_defs_and_href_chain(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+            <defs>
+                <linearGradient id="baseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#112233" stop-opacity="0.2" />
+                    <stop offset="100%" stop-color="#445566" />
+                </linearGradient>
+                <linearGradient id="derivedGrad" href="#baseGrad" />
+            </defs>
+            <rect x="0" y="0" width="100" height="40" fill="url(#derivedGrad)" />
+        </svg>"""
+
+        doc = SVGParser().parse_string(svg)
+        shape = doc.elements[0]
+
+        assert shape.style.fill_gradient is not None
+        assert shape.style.fill_gradient.kind == "linear"
+        assert shape.style.fill_gradient.x2 == pytest.approx(1.0)
+        assert len(shape.style.fill_gradient.stops) == 2
+        assert shape.style.fill_gradient.stops[0].color == "#112233"
+        assert shape.style.fill_gradient.stops[0].opacity == pytest.approx(0.2)
+        assert shape.style.unsupported_styles == []
 
 
 class TestParseTransform:

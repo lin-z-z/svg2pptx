@@ -285,6 +285,34 @@ class TestConvertFile:
         assert line_color.find(qn("a:alpha")).get("val") == "25000"
         assert shape.adjustments[0] == pytest.approx(0.2, abs=1e-4)
 
+    def test_shape_writer_maps_linear_gradient_fill(self):
+        """linearGradient defs should become DrawingML gradFill rather than a solid fallback."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <defs>
+                <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#0E5A8A" stop-opacity="0.2" />
+                    <stop offset="100%" stop-color="#1E88E5" />
+                </linearGradient>
+            </defs>
+            <rect x="20" y="10" width="100" height="50" fill="url(#heroGrad)" />
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        shape = prs.slides[0].shapes[0]
+
+        grad_fill = shape.fill._xPr.find(qn("a:gradFill"))
+        assert grad_fill is not None
+
+        stops = grad_fill.find(qn("a:gsLst"))
+        assert len(stops) == 2
+        assert stops[0].get("pos") == "0"
+        assert stops[0][0].get("val") == "0E5A8A"
+        assert stops[0][0].find(qn("a:alpha")).get("val") == "20000"
+
+        linear = grad_fill.find(qn("a:lin"))
+        assert linear is not None
+        assert linear.get("ang") == "0"
+
     def test_centered_cjk_title_gets_non_trivial_textbox_width(self):
         """Real centered Chinese titles should not collapse to latin-style width."""
         svg_path = FIXTURES_DIR / "oceanppt" / "full_15" / "slide_015.svg"

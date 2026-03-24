@@ -75,6 +75,7 @@ def _build_score_rows(svg_files: list[Path]) -> list[dict]:
 def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: dict, results: list[dict]) -> None:
     template = REPORT_TEMPLATE_PATH.read_text(encoding="utf-8")
     unsupported_summary = _summarize_unsupported_styles(results)
+    gradient_summary = _summarize_gradient_stats(results)
     report = (
         template.replace("{{sample_set}}", sample_set)
         .replace("{{generated_at}}", datetime.now(timezone.utc).isoformat())
@@ -91,6 +92,11 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
             + json.dumps(unsupported_summary, ensure_ascii=False, indent=2)
             + "\n```\n"
         )
+    report += (
+        "\n\n## Gradient 支持统计\n\n```json\n"
+        + json.dumps(gradient_summary, ensure_ascii=False, indent=2)
+        + "\n```\n"
+    )
     (run_dir / "reports" / "regression_report.md").write_text(report, encoding="utf-8")
 
 
@@ -117,6 +123,19 @@ def _summarize_unsupported_styles(results: list[dict]) -> list[dict]:
         if source:
             entry["source"] = source
         summary.append(entry)
+    return summary
+
+
+def _summarize_gradient_stats(results: list[dict]) -> dict:
+    summary = {
+        "linear_applied": 0,
+        "radial_applied": 0,
+        "degraded": 0,
+    }
+    for result in results:
+        stats = result.get("gradient_stats", {})
+        for key in summary:
+            summary[key] += int(stats.get(key, 0))
     return summary
 
 
@@ -180,6 +199,7 @@ def run_regression(
                     "output_relpath": str(pptx_path.relative_to(run_dir)),
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                     "error": str(exc),
+                    "gradient_stats": dict(active_config.gradient_stats),
                     "unsupported_styles": list(active_config.unsupported_styles),
                 }
             )
@@ -191,12 +211,14 @@ def run_regression(
                     "output_relpath": str(pptx_path.relative_to(run_dir)),
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                     "error": "",
+                    "gradient_stats": dict(active_config.gradient_stats),
                     "unsupported_styles": list(active_config.unsupported_styles),
                 }
             )
 
     _render_report(run_dir, sample_dir, sample_set_name, summary, results)
     unsupported_summary = _summarize_unsupported_styles(results)
+    gradient_summary = _summarize_gradient_stats(results)
 
     run_manifest = {
         "schema_version": "1.0",
@@ -215,6 +237,7 @@ def run_regression(
             "success_count": sum(1 for item in results if item["status"] == "success"),
             "failure_count": sum(1 for item in results if item["status"] != "success"),
         },
+        "gradient_support_summary": gradient_summary,
         "unsupported_styles_summary": unsupported_summary,
         "results": results,
     }

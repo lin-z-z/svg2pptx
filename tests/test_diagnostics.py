@@ -80,10 +80,11 @@ def test_run_regression_records_unsupported_style_items(tmp_path):
     (sample_dir / "style_fallback.svg").write_text(
         """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
         <defs>
-          <linearGradient id="grad1">
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#ff0000" />
             <stop offset="100%" stop-color="#0000ff" />
           </linearGradient>
+          <linearGradient id="grad2" href="#grad1" />
         </defs>
         <rect
           x="10"
@@ -92,7 +93,7 @@ def test_run_regression_records_unsupported_style_items(tmp_path):
           height="30"
           rx="12"
           ry="6"
-          fill="url(#grad1)"
+          fill="url(#grad2)"
           stroke="#112233"
         />
         </svg>""",
@@ -101,9 +102,12 @@ def test_run_regression_records_unsupported_style_items(tmp_path):
 
     run_dir, manifest = run_regression(sample_dir, tmp_path / "artifacts", "style_fallback")
 
+    assert manifest["gradient_support_summary"]["linear_applied"] == 1
+    assert manifest["gradient_support_summary"]["degraded"] == 0
     reasons = {item["reason"] for item in manifest["unsupported_styles_summary"]}
-    assert "url-paint-fallback" in reasons
     assert "non-uniform-radius-fallback" in reasons
     assert manifest["results"][0]["unsupported_styles"]
+    assert manifest["results"][0]["gradient_stats"]["linear_applied"] == 1
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "不支持样式项" in report
+    assert "Gradient 支持统计" in report
