@@ -102,8 +102,14 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
     saved_manifest = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
     assert saved_manifest["sample_set"] == "smoke"
     assert saved_manifest["unsupported_styles_summary"] == []
+    assert "problem_summary" in saved_manifest
+    assert "key_metrics" in saved_manifest
     assert "filter_support_summary" in saved_manifest
     assert "render_protection_summary" in saved_manifest
+    report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
+    assert "产物路径" in report
+    assert "问题分级" in report
+    assert "关键指标" in report
 
 
 def test_run_regression_records_unsupported_style_items(tmp_path):
@@ -196,3 +202,32 @@ def test_run_regression_records_render_protection_warnings(tmp_path):
     assert "freeform-points-per-page-overflow" in codes
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "Render 保护统计" in report
+
+
+def test_run_regression_can_compare_previous_run(tmp_path):
+    sample_dir = tmp_path / "samples"
+    sample_dir.mkdir()
+    for fixture_name in ("basic_shapes.svg", "grouped.svg"):
+        (sample_dir / fixture_name).write_text(
+            (FIXTURES_DIR / fixture_name).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+
+    first_run_dir, first_manifest = run_regression(
+        sample_dir,
+        tmp_path / "artifacts",
+        "compare_smoke",
+    )
+    second_run_dir, second_manifest = run_regression(
+        sample_dir,
+        tmp_path / "artifacts",
+        "compare_smoke",
+        config=Config(max_shapes_per_page=1),
+        compare_to=first_run_dir / "run.json",
+    )
+
+    assert first_manifest["comparison"]["available"] is False
+    assert second_manifest["comparison"]["available"] is True
+    assert second_manifest["comparison"]["delta"]["render_warning_count"] > 0
+    report = (second_run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
+    assert "与上次回归对比" in report
