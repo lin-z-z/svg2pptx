@@ -47,6 +47,35 @@ def test_scan_svg_directory_reports_expected_features(tmp_path):
     assert "unresolved_ref" in report["risk_tags"]
     assert (output_dir / "summary.json").exists()
     assert (output_dir / "pages" / "sample.json").exists()
+    assert summary["filter_support_summary"]["strategy_version"]
+
+
+def test_scan_svg_directory_classifies_filter_support_levels(tmp_path):
+    svg_dir = tmp_path / "scan_input"
+    svg_dir.mkdir()
+    (svg_dir / "filter_sample.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <defs>
+          <filter id="shadow">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="8" />
+            <feOffset dx="0" dy="4" result="offsetblur" />
+            <feComponentTransfer><feFuncA type="linear" slope="0.2" /></feComponentTransfer>
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        <rect x="0" y="0" width="80" height="40" filter="url(#shadow)" />
+        </svg>""",
+        encoding="utf-8",
+    )
+
+    summary = scan_svg_directory(svg_dir)
+    report = summary["pages"][0]
+    filter_result = report["filters"][0]
+
+    assert filter_result["filter_id"] == "shadow"
+    assert filter_result["support_level"] == "approximate"
+    assert filter_result["current_action"] == "controlled_degradation"
+    assert summary["filter_support_summary"]["support_levels"]["approximate"] == 1
 
 
 def test_run_regression_creates_fixed_artifact_layout(tmp_path):
@@ -72,6 +101,7 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
     saved_manifest = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
     assert saved_manifest["sample_set"] == "smoke"
     assert saved_manifest["unsupported_styles_summary"] == []
+    assert "filter_support_summary" in saved_manifest
 
 
 def test_run_regression_records_unsupported_style_items(tmp_path):
@@ -111,3 +141,27 @@ def test_run_regression_records_unsupported_style_items(tmp_path):
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "不支持样式项" in report
     assert "Gradient 支持统计" in report
+
+
+def test_run_regression_exposes_filter_page_results(tmp_path):
+    sample_dir = tmp_path / "samples"
+    sample_dir.mkdir()
+    (sample_dir / "filter_page.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <rect x="10" y="10" width="60" height="20" fill="#0E5A8A" filter="url(#glow)" />
+        </svg>""",
+        encoding="utf-8",
+    )
+
+    run_dir, manifest = run_regression(sample_dir, tmp_path / "artifacts", "filter_page")
+
+    assert manifest["filter_support_summary"]["support_levels"]["controlled_degradation"] == 1
+    assert manifest["filter_page_results"][0]["filters"][0]["filter_id"] == "glow"
+    report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
+    assert "Filter 页结果" in report

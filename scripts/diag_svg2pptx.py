@@ -76,6 +76,15 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
     template = REPORT_TEMPLATE_PATH.read_text(encoding="utf-8")
     unsupported_summary = _summarize_unsupported_styles(results)
     gradient_summary = _summarize_gradient_stats(results)
+    filter_summary = summary.get("filter_support_summary", {})
+    filter_pages = [
+        {
+            "page_id": page["page_id"],
+            "filters": page["filters"],
+        }
+        for page in summary.get("pages", [])
+        if page.get("filters")
+    ]
     report = (
         template.replace("{{sample_set}}", sample_set)
         .replace("{{generated_at}}", datetime.now(timezone.utc).isoformat())
@@ -97,6 +106,17 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
         + json.dumps(gradient_summary, ensure_ascii=False, indent=2)
         + "\n```\n"
     )
+    report += (
+        "\n\n## Filter 支持统计\n\n```json\n"
+        + json.dumps(filter_summary, ensure_ascii=False, indent=2)
+        + "\n```\n"
+    )
+    if filter_pages:
+        report += (
+            "\n\n## Filter 页结果\n\n```json\n"
+            + json.dumps(filter_pages, ensure_ascii=False, indent=2)
+            + "\n```\n"
+        )
     (run_dir / "reports" / "regression_report.md").write_text(report, encoding="utf-8")
 
 
@@ -219,6 +239,15 @@ def run_regression(
     _render_report(run_dir, sample_dir, sample_set_name, summary, results)
     unsupported_summary = _summarize_unsupported_styles(results)
     gradient_summary = _summarize_gradient_stats(results)
+    filter_summary = summary.get("filter_support_summary", {})
+    filter_pages = [
+        {
+            "page_id": page["page_id"],
+            "filters": page["filters"],
+        }
+        for page in summary.get("pages", [])
+        if page.get("filters")
+    ]
 
     run_manifest = {
         "schema_version": "1.0",
@@ -238,6 +267,8 @@ def run_regression(
             "failure_count": sum(1 for item in results if item["status"] != "success"),
         },
         "gradient_support_summary": gradient_summary,
+        "filter_support_summary": filter_summary,
+        "filter_page_results": filter_pages,
         "unsupported_styles_summary": unsupported_summary,
         "results": results,
     }
