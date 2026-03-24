@@ -75,6 +75,11 @@ class Config:
         repr=False,
     )
 
+    def __post_init__(self) -> None:
+        # preserve_groups 是对外的语义开关，请求保组时不要继续走 flatten。
+        if self.preserve_groups:
+            self.flatten_groups = False
+
     def reset_runtime_reports(self) -> None:
         """Clear per-conversion diagnostic output."""
         self.unsupported_styles.clear()

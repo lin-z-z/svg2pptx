@@ -6,6 +6,7 @@ import tempfile
 import os
 
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.oxml.ns import qn
 from pptx.util import Emu
 
@@ -133,10 +134,35 @@ class TestConvertFile:
             
             assert os.path.exists(pptx_path)
             prs = Presentation(pptx_path)
-            assert len(prs.slides[0].shapes) > 0
+            top_shapes = prs.slides[0].shapes
+            assert len(top_shapes) == 2
+            assert all(
+                shape.shape_type == MSO_SHAPE_TYPE.GROUP for shape in top_shapes
+            )
+            assert len(top_shapes[0].shapes) == 2
+            assert top_shapes[0].shapes[0].shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE
+            assert top_shapes[0].shapes[1].shape_type == MSO_SHAPE_TYPE.GROUP
         finally:
             if os.path.exists(pptx_path):
                 os.unlink(pptx_path)
+
+    def test_grouped_writer_preserves_shape_and_text_order(self):
+        """Grouped writer should keep the original child order for z-order fidelity."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120">
+            <g transform="translate(10, 10)">
+                <rect x="0" y="0" width="120" height="60" fill="#0ea5e9"/>
+                <text x="16" y="36" font-size="20" fill="#ffffff">Front label</text>
+            </g>
+        </svg>"""
+
+        prs = SVGConverter(Config(preserve_groups=True)).convert_string(svg)
+
+        group_shape = prs.slides[0].shapes[0]
+        assert group_shape.shape_type == MSO_SHAPE_TYPE.GROUP
+        assert [child.shape_type for child in group_shape.shapes] == [
+            MSO_SHAPE_TYPE.AUTO_SHAPE,
+            MSO_SHAPE_TYPE.TEXT_BOX,
+        ]
 
     def test_grouped_and_flattened_share_nested_group_bbox(self):
         """Nested group geometry should stay consistent across both writers."""
@@ -469,3 +495,9 @@ class TestConfig:
         assert config.scale == 2.0
         assert config.curve_tolerance == 0.5
         assert config.preserve_groups is False
+
+    def test_preserve_groups_disables_flatten_groups(self):
+        config = Config(preserve_groups=True)
+
+        assert config.preserve_groups is True
+        assert config.flatten_groups is False
