@@ -82,10 +82,11 @@ class Style:
         stroke_width: Stroke width in pixels.
         stroke_opacity: Stroke opacity (0.0 to 1.0).
         opacity: Overall opacity (0.0 to 1.0).
-        font_family: Font family name.
-        font_size: Font size in pixels.
-        font_weight: Font weight (normal, bold, or numeric).
-        text_anchor: Text anchor (start, middle, end).
+    font_family: Font family name.
+    font_size: Font size in pixels.
+    font_weight: Font weight (normal, bold, or numeric).
+    letter_spacing: Letter spacing in pixels.
+    text_anchor: Text anchor (start, middle, end).
     """
 
     fill: str = "none"
@@ -97,6 +98,7 @@ class Style:
     font_family: str = "Arial"
     font_size: float = 12.0
     font_weight: str = "normal"
+    letter_spacing: float = 0.0
     text_anchor: str = "start"
 
     def with_parent(self, parent: "Style") -> "Style":
@@ -127,6 +129,7 @@ class Style:
                 if self.font_weight != "inherit"
                 else parent.font_weight
             ),
+            letter_spacing=self.letter_spacing,
             text_anchor=(
                 self.text_anchor
                 if self.text_anchor != "inherit"
@@ -394,6 +397,7 @@ def parse_style(
             font_family=parent_style.font_family,
             font_size=parent_style.font_size,
             font_weight=parent_style.font_weight,
+            letter_spacing=parent_style.letter_spacing,
             text_anchor=parent_style.text_anchor,
         )
     else:
@@ -476,6 +480,16 @@ def parse_style(
     font_weight_val = get_attr("font-weight")
     if font_weight_val is not None:
         style.font_weight = font_weight_val
+
+    letter_spacing_val = get_attr("letter-spacing")
+    if letter_spacing_val is not None:
+        try:
+            spacing_str = re.sub(
+                r"[a-z%]+$", "", letter_spacing_val.strip(), flags=re.I
+            )
+            style.letter_spacing = float(spacing_str)
+        except ValueError:
+            pass
 
     text_anchor_val = get_attr("text-anchor")
     if text_anchor_val is not None:

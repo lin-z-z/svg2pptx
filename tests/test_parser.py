@@ -1,6 +1,7 @@
 """Tests for SVG parser module."""
 
 import pytest
+from pathlib import Path
 from xml.etree.ElementTree import fromstring
 
 from svg2pptx.parser.svg_parser import SVGParser, SVGDocument
@@ -74,6 +75,11 @@ class TestParseStyle:
         assert style.fill == "#ff0000"  # Inherited
         assert style.stroke == "#0000ff"  # Inherited
         assert style.stroke_width == 2.0  # Overridden
+
+    def test_letter_spacing(self):
+        element = fromstring('<text letter-spacing="2">Hello</text>')
+        style = parse_style(element)
+        assert style.letter_spacing == 2.0
 
 
 class TestParseTransform:
@@ -247,3 +253,94 @@ class TestSVGParser:
         assert len(doc.elements) == 1
         group = doc.elements[0]
         assert len(group.children) == 2
+
+    def test_parse_text_spans_preserves_tspan_structure(self):
+        svg = '''<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
+            <text x="100" y="200" font-family="Noto Sans SC" font-size="32" letter-spacing="2">
+                5-10<tspan font-size="48" font-weight="bold" dx="8">x</tspan>
+            </text>
+        </svg>'''
+        parser = SVGParser()
+        doc = parser.parse_string(svg)
+
+        text = doc.elements[0]
+        assert text.text == "5-10x"
+        assert len(text.spans) == 2
+        assert text.spans[0].text == "5-10"
+        assert text.spans[0].x == 100
+        assert text.spans[0].y == 200
+        assert text.spans[0].style.font_family == "Noto Sans SC"
+        assert text.spans[0].style.letter_spacing == 2.0
+        assert text.spans[1].text == "x"
+        assert text.spans[1].dx == 8
+        assert text.spans[1].style.font_size == 48.0
+        assert text.spans[1].style.font_weight == "bold"
+        assert text.spans[1].source_kind == "tspan"
+
+    def test_parse_text_spans_from_oceanppt_fixture(self):
+        svg_path = (
+            Path(__file__).parent
+            / "fixtures"
+            / "oceanppt"
+            / "baseline_5"
+            / "slide_008.svg"
+        )
+        parser = SVGParser()
+        doc = parser.parse_file(svg_path)
+
+        def collect_text_elements(elements):
+            found = []
+            for element in elements:
+                if hasattr(element, "spans"):
+                    found.append(element)
+                if hasattr(element, "children"):
+                    found.extend(collect_text_elements(element.children))
+            return found
+
+        text_elements = collect_text_elements(doc.elements)
+        multi_span = next(
+            (
+                element
+                for element in text_elements
+                if len(element.spans) >= 3 and "景区空中观光定制化路径" in element.text
+            ),
+            None,
+        )
+
+        assert multi_span is not None
+        assert [span.text for span in multi_span.spans] == [
+            "· 景区空中观光定制化路径",
+            "· 高端飞行社交与驾驶体验",
+            "· 重新定义城市天际线视野",
+        ]
+        assert [span.dy for span in multi_span.spans] == [0.0, 30.0, 30.0]
+        assert all(span.source_kind == "tspan" for span in multi_span.spans)
+
+    def test_oceanppt_text_pages_do_not_parse_empty(self):
+        parser = SVGParser()
+
+        def collect_text_elements(elements):
+            found = []
+            for element in elements:
+                if hasattr(element, "spans"):
+                    found.append(element)
+                if hasattr(element, "children"):
+                    found.extend(collect_text_elements(element.children))
+            return found
+
+        fixture_dirs = [
+            Path(__file__).parent / "fixtures" / "oceanppt" / "baseline_5",
+            Path(__file__).parent / "fixtures" / "oceanppt" / "full_15",
+        ]
+
+        for fixture_dir in fixture_dirs:
+            for svg_path in sorted(fixture_dir.glob("*.svg")):
+                raw_svg = svg_path.read_text(encoding="utf-8")
+                if "<text" not in raw_svg:
+                    continue
+                doc = parser.parse_file(svg_path)
+                text_elements = collect_text_elements(doc.elements)
+                assert text_elements, f"{svg_path.name} lost all text elements"
+                assert all(
+                    element.text.strip() for element in text_elements
+                ), f"{svg_path.name} contains empty parsed text elements"
