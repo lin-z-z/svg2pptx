@@ -5,12 +5,13 @@ from typing import Optional
 
 from pptx.shapes.base import BaseShape
 from pptx.shapes.shapetree import SlideShapes
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 
 from svg2pptx.parser.svg_parser import TextElement, TextSpan
 from svg2pptx.config import Config
-from svg2pptx.geometry.units import px_to_emu
+from svg2pptx.geometry.units import px_to_emu, px_to_pt
 from svg2pptx.pptx_writer.shapes import parse_hex_color
 
 
@@ -75,6 +76,7 @@ def create_text(
     text_box = shapes.add_textbox(left, top, width, height)
     text_frame = text_box.text_frame
     text_frame.word_wrap = False
+    text_frame.auto_size = MSO_AUTO_SIZE.NONE
     
     # Remove margins/padding for more accurate positioning
     text_frame.margin_left = 0
@@ -226,7 +228,7 @@ def _apply_run_style(run, style, scale: float) -> None:
     """Apply text styling to a run."""
     font = run.font
     font.name = style.font_family
-    font.size = Pt(style.font_size * scale)
+    font.size = Pt(px_to_pt(style.font_size * scale))
 
     if style.font_weight in ("bold", "700", "800", "900"):
         font.bold = True

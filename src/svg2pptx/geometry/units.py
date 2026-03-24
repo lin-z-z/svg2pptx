@@ -32,6 +32,16 @@ def px_to_emu(px: float) -> int:
     return int(px * EMU_PER_PX)
 
 
+def px_to_pt(px: float) -> float:
+    """
+    Convert CSS pixels to points.
+
+    SVG/CSS text sizes use 96 DPI pixels, while PowerPoint font sizes are
+    expressed in points at 72 DPI.
+    """
+    return px * 72.0 / DEFAULT_DPI
+
+
 def emu_to_px(emu: int) -> float:
     """
     Convert EMU to CSS pixels.

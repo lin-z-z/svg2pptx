@@ -128,6 +128,23 @@ class TestParseStyle:
         assert shape.style.fill_gradient.stops[0].opacity == pytest.approx(0.2)
         assert shape.style.unsupported_styles == []
 
+    def test_svg_parser_resolves_pattern_fill_to_safe_fallback(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+            <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#0E5A8A" stroke-width="1" />
+                </pattern>
+            </defs>
+            <rect x="0" y="0" width="100" height="40" fill="url(#grid)" />
+        </svg>"""
+
+        doc = SVGParser().parse_string(svg)
+        shape = doc.elements[0]
+
+        assert shape.style.fill == "none"
+        assert shape.style.fill_gradient is None
+        assert shape.style.unsupported_styles == []
+
     def test_svg_parser_resolves_supported_filter_defs(self):
         svg = """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
             <defs>

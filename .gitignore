@@ -201,8 +201,8 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Local regression artifacts
-artifacts/regression_runs/
+# Local artifacts
+artifacts/
 
 # Marimo
 marimo/_static/

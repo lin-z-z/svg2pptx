@@ -12,7 +12,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Emu
 
 from svg2pptx import svg_to_pptx, SVGConverter, Config
-from svg2pptx.geometry.units import px_to_emu
+from svg2pptx.geometry.units import px_to_emu, px_to_pt
 from svg2pptx.parser.paths import parse_path
 from svg2pptx.pptx_writer.shapes import parse_hex_color
 from svg2pptx.pptx_writer.text import _estimate_span_width
@@ -234,8 +234,8 @@ class TestConvertFile:
 
         assert len(text_shape.text_frame.paragraphs) == 1
         assert [run.text for run in paragraph.runs] == ["5-10", "x"]
-        assert paragraph.runs[0].font.size.pt == 32
-        assert paragraph.runs[1].font.size.pt == 48
+        assert paragraph.runs[0].font.size.pt == pytest.approx(px_to_pt(32))
+        assert paragraph.runs[1].font.size.pt == pytest.approx(px_to_pt(48))
         assert paragraph.runs[1].font.color.rgb == parse_hex_color("#0E5A8A")
 
     def test_text_writer_turns_multiline_tspan_into_paragraphs(self):
@@ -340,6 +340,28 @@ class TestConvertFile:
         linear = grad_fill.find(qn("a:lin"))
         assert linear is not None
         assert linear.get("ang") == "0"
+
+    def test_shape_writer_degrades_near_white_gradient_to_solid_fill(self):
+        """Low-contrast near-white gradients should fall back to solid fill."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <defs>
+                <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#F8FCFF" />
+                    <stop offset="100%" stop-color="#FFFFFF" />
+                </linearGradient>
+            </defs>
+            <rect x="20" y="10" width="100" height="50" fill="url(#bgGrad)" />
+        </svg>"""
+
+        converter = SVGConverter()
+        prs = converter.convert_string(svg)
+        shape = prs.slides[0].shapes[0]
+
+        assert shape.fill._xPr.find(qn("a:gradFill")) is None
+        solid_fill = shape.fill._xPr.find(qn("a:solidFill"))
+        assert solid_fill is not None
+        assert solid_fill[0].get("val") == "F8FCFF"
+        assert converter.config.gradient_stats["degraded"] == 1
 
     def test_shape_writer_maps_drop_shadow_filter_to_outer_shadow(self):
         """Supported shadow filters should become DrawingML outerShdw effects."""

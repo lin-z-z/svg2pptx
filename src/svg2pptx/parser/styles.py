@@ -118,6 +118,7 @@ class FilterSpec:
 # Global registries for gradient parsing.
 _gradient_colors: dict[str, str] = {}
 _gradient_specs: dict[str, GradientSpec] = {}
+_pattern_colors: dict[str, str] = {}
 _filter_specs: dict[str, FilterSpec] = {}
 
 
@@ -233,6 +234,7 @@ def clear_gradient_registry() -> None:
     """Clear the gradient color registry. Call before parsing a new SVG."""
     _gradient_colors.clear()
     _gradient_specs.clear()
+    _pattern_colors.clear()
     _filter_specs.clear()
 
 
@@ -272,6 +274,14 @@ def get_gradient(gradient_id: str) -> Optional[GradientSpec]:
     return _gradient_specs.get(gradient_id)
 
 
+def register_pattern_color(pattern_id: str, color: str) -> None:
+    _pattern_colors[pattern_id] = color
+
+
+def get_pattern_color(pattern_id: str) -> Optional[str]:
+    return _pattern_colors.get(pattern_id)
+
+
 def register_filter(filter_spec: FilterSpec) -> None:
     """Register a resolved filter definition."""
     _filter_specs[filter_spec.filter_id] = filter_spec
@@ -309,6 +319,21 @@ def parse_gradients_from_defs(defs_element) -> None:
         gradient = _resolve_gradient(gradient_id, gradients, resolved, resolving)
         if gradient is not None:
             register_gradient(gradient)
+
+
+def parse_patterns_from_defs(defs_element) -> None:
+    for child in defs_element:
+        tag = child.tag
+        if '}' in tag:
+            tag = tag.split('}')[-1]
+        if tag.lower() != 'pattern':
+            continue
+
+        pattern_id = child.get('id')
+        if not pattern_id:
+            continue
+
+        register_pattern_color(pattern_id, _resolve_pattern_fallback(child))
 
 
 def parse_filters_from_defs(defs_element) -> None:
@@ -358,6 +383,20 @@ def _resolve_filter(filter_element, filter_id: str) -> FilterSpec:
         kind="unsupported",
         primitive_chain=chain,
     )
+
+
+def _resolve_pattern_fallback(pattern_element) -> str:
+    for child in pattern_element.iter():
+        if child is pattern_element:
+            continue
+
+        style_dict = parse_style_attribute(child.get("style", ""))
+        fill_token = style_dict.get("fill", child.get("fill", ""))
+        fill_color = parse_color(fill_token)
+        if fill_color not in ("", "none") and fill_color.startswith("#"):
+            return fill_color
+
+    return "none"
 
 
 def _resolve_drop_shadow(filter_id: str, element, chain: tuple[str, ...]) -> FilterSpec:
@@ -652,6 +691,9 @@ def parse_color(color_str: str) -> str:
         gradient_color = get_gradient_color(ref_id)
         if gradient_color:
             return gradient_color
+        pattern_color = get_pattern_color(ref_id)
+        if pattern_color is not None:
+            return pattern_color
         # Unknown reference, default to transparent/none
         return "none"
 
@@ -818,11 +860,15 @@ def parse_style(
                 style.fill_gradient = gradient
                 style.fill = gradient.fallback_color
             else:
-                style.record_unsupported_style(
-                    "fill",
-                    fill_val.strip(),
-                    "unresolved-url-reference",
-                )
+                pattern_color = get_pattern_color(fill_ref.group(1))
+                if pattern_color is not None:
+                    style.fill = pattern_color
+                else:
+                    style.record_unsupported_style(
+                        "fill",
+                        fill_val.strip(),
+                        "unresolved-url-reference",
+                    )
         elif style.fill not in ("none",) and not style.fill.startswith("#"):
             style.record_unsupported_style(
                 "fill",
@@ -859,11 +905,15 @@ def parse_style(
                     "gradient-stroke-fallback",
                 )
             else:
-                style.record_unsupported_style(
-                    "stroke",
-                    stroke_val.strip(),
-                    "unresolved-url-reference",
-                )
+                pattern_color = get_pattern_color(stroke_ref.group(1))
+                if pattern_color is not None:
+                    style.stroke = pattern_color
+                else:
+                    style.record_unsupported_style(
+                        "stroke",
+                        stroke_val.strip(),
+                        "unresolved-url-reference",
+                    )
         elif style.stroke not in ("none",) and not style.stroke.startswith("#"):
             style.record_unsupported_style(
                 "stroke",

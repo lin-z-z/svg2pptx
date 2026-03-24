@@ -304,7 +304,10 @@ def _apply_fill_format(fill, style: Style, config: Optional[Config]) -> None:
         return
 
     if style.fill_gradient is not None:
-        if _apply_gradient_fill(fill._xPr, style.fill_gradient, style, config):
+        if _should_fallback_to_solid_fill(style.fill_gradient):
+            if config is not None:
+                config.note_gradient_degraded()
+        elif _apply_gradient_fill(fill._xPr, style.fill_gradient, style, config):
             return
 
     try:
@@ -394,6 +397,34 @@ def _apply_gradient_fill(
 
     container.append(grad_fill)
     return True
+
+
+def _should_fallback_to_solid_fill(gradient: GradientSpec) -> bool:
+    """Avoid PowerPoint blue-casting on near-white, low-contrast gradients."""
+    if len(gradient.stops) < 2:
+        return True
+
+    channel_values: list[tuple[int, int, int]] = []
+    for stop in gradient.stops:
+        color = stop.color.strip().lstrip("#")
+        if len(color) != 6:
+            return False
+        channel_values.append(
+            (
+                int(color[0:2], 16),
+                int(color[2:4], 16),
+                int(color[4:6], 16),
+            )
+        )
+
+    min_channel = min(min(rgb) for rgb in channel_values)
+    max_delta = max(
+        abs(a - b)
+        for rgb_a in channel_values
+        for rgb_b in channel_values
+        for a, b in zip(rgb_a, rgb_b)
+    )
+    return min_channel >= 0xE8 and max_delta <= 0x18
 
 
 def _build_outer_shadow(effect: FilterSpec, style: Style):
