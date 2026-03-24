@@ -15,7 +15,7 @@ URL_REF_RE = re.compile(r"url\(#([^)]+)\)")
 CURVE_COMMAND_RE = re.compile(r"[CSQTAcsqta]")
 URL_ATTRS = ("fill", "stroke", "filter", "clip-path", "mask")
 OPACITY_ATTRS = ("opacity", "fill-opacity", "stroke-opacity")
-FILTER_STRATEGY_VERSION = "2026-03-24.filter-matrix-v1"
+FILTER_STRATEGY_VERSION = "2026-03-24.filter-matrix-v2"
 
 
 def _strip_ns(tag: str) -> str:
@@ -50,8 +50,8 @@ def _classify_filter_primitives(primitives: list[str]) -> dict:
     if normalized == ("fedropshadow",):
         return {
             "support_level": "approximate",
-            "current_action": "controlled_degradation",
-            "degradation_note": "单一 feDropShadow 已进入近似支持矩阵，当前导出先保留主体并记录，后续由 SVG-130 落视觉等价。",
+            "current_action": "ppt_outer_shadow",
+            "degradation_note": "单一 feDropShadow 近似映射为 PowerPoint outer shadow，方向、偏移和透明度按参数转换。",
         }
     if normalized == (
         "fegaussianblur",
@@ -61,14 +61,14 @@ def _classify_filter_primitives(primitives: list[str]) -> dict:
     ):
         return {
             "support_level": "approximate",
-            "current_action": "controlled_degradation",
-            "degradation_note": "典型阴影链可近似映射为 PowerPoint 阴影，当前导出先记录降级，后续由 SVG-130 实装。",
+            "current_action": "ppt_outer_shadow",
+            "degradation_note": "典型 blur+offset 阴影链近似映射为 PowerPoint outer shadow，alpha 取 feComponentTransfer slope。",
         }
     if normalized == ("fegaussianblur", "fecomposite"):
         return {
-            "support_level": "controlled_degradation",
-            "current_action": "record_only",
-            "degradation_note": "模糊加 composite 更接近 glow，当前只输出降级记录，不静默忽略。",
+            "support_level": "approximate",
+            "current_action": "ppt_glow",
+            "degradation_note": "模糊加 composite 近似映射为 PowerPoint glow，半径按 stdDeviation 转换，颜色取源图形主色。",
         }
     if not normalized:
         return {

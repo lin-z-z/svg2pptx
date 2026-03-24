@@ -100,9 +100,25 @@ class GradientSpec:
         return self.stops[0].color
 
 
+@dataclass
+class FilterSpec:
+    """Resolved SVG filter definition used by the writer layer."""
+
+    filter_id: str
+    kind: str
+    primitive_chain: tuple[str, ...] = field(default_factory=tuple)
+    dx: float = 0.0
+    dy: float = 0.0
+    blur: float = 0.0
+    color: Optional[str] = None
+    opacity: float = 1.0
+    use_source_color: bool = False
+
+
 # Global registries for gradient parsing.
 _gradient_colors: dict[str, str] = {}
 _gradient_specs: dict[str, GradientSpec] = {}
+_filter_specs: dict[str, FilterSpec] = {}
 
 
 @dataclass
@@ -137,6 +153,7 @@ class Style:
     text_anchor: str = "start"
     fill_gradient: Optional[GradientSpec] = None
     stroke_gradient: Optional[GradientSpec] = None
+    filter_effect: Optional[FilterSpec] = None
     unsupported_styles: list[dict[str, str]] = field(default_factory=list)
 
     def with_parent(self, parent: "Style") -> "Style":
@@ -175,6 +192,7 @@ class Style:
             ),
             fill_gradient=self.fill_gradient or parent.fill_gradient,
             stroke_gradient=self.stroke_gradient or parent.stroke_gradient,
+            filter_effect=self.filter_effect,
         )
 
     @property
@@ -215,6 +233,7 @@ def clear_gradient_registry() -> None:
     """Clear the gradient color registry. Call before parsing a new SVG."""
     _gradient_colors.clear()
     _gradient_specs.clear()
+    _filter_specs.clear()
 
 
 def register_gradient_color(gradient_id: str, color: str) -> None:
@@ -253,6 +272,16 @@ def get_gradient(gradient_id: str) -> Optional[GradientSpec]:
     return _gradient_specs.get(gradient_id)
 
 
+def register_filter(filter_spec: FilterSpec) -> None:
+    """Register a resolved filter definition."""
+    _filter_specs[filter_spec.filter_id] = filter_spec
+
+
+def get_filter(filter_id: str) -> Optional[FilterSpec]:
+    """Get a resolved filter definition by ID."""
+    return _filter_specs.get(filter_id)
+
+
 def parse_gradients_from_defs(defs_element) -> None:
     """
     Parse gradient definitions from a <defs> element and register their colors.
@@ -280,6 +309,131 @@ def parse_gradients_from_defs(defs_element) -> None:
         gradient = _resolve_gradient(gradient_id, gradients, resolved, resolving)
         if gradient is not None:
             register_gradient(gradient)
+
+
+def parse_filters_from_defs(defs_element) -> None:
+    """Parse filter definitions from a <defs> element and register supported chains."""
+    for child in defs_element:
+        tag = child.tag
+        if "}" in tag:
+            tag = tag.split("}")[-1]
+        if tag.lower() != "filter":
+            continue
+
+        filter_id = child.get("id")
+        if not filter_id:
+            continue
+
+        filter_spec = _resolve_filter(child, filter_id)
+        if filter_spec is not None:
+            register_filter(filter_spec)
+
+
+def _resolve_filter(filter_element, filter_id: str) -> FilterSpec:
+    """Resolve a supported SVG filter chain into a writer-side effect contract."""
+    primitives: list[tuple[str, object]] = []
+    for child in filter_element:
+        tag = child.tag
+        if "}" in tag:
+            tag = tag.split("}")[-1]
+        tag = tag.lower()
+        if tag.startswith("fe"):
+            primitives.append((tag, child))
+
+    chain = tuple(tag for tag, _ in primitives)
+    if chain == ("fedropshadow",):
+        return _resolve_drop_shadow(filter_id, primitives[0][1], chain)
+    if chain == (
+        "fegaussianblur",
+        "feoffset",
+        "fecomponenttransfer",
+        "femerge",
+    ):
+        return _resolve_shadow_chain(filter_id, primitives, chain)
+    if chain == ("fegaussianblur", "fecomposite"):
+        return _resolve_glow_chain(filter_id, primitives, chain)
+
+    return FilterSpec(
+        filter_id=filter_id,
+        kind="unsupported",
+        primitive_chain=chain,
+    )
+
+
+def _resolve_drop_shadow(filter_id: str, element, chain: tuple[str, ...]) -> FilterSpec:
+    """Resolve SVG feDropShadow into a filter spec."""
+    return FilterSpec(
+        filter_id=filter_id,
+        kind="outer_shadow",
+        primitive_chain=chain,
+        dx=_parse_filter_number(element.get("dx"), 0.0),
+        dy=_parse_filter_number(element.get("dy"), 0.0),
+        blur=_parse_filter_number(element.get("stdDeviation"), 0.0),
+        color=parse_color(element.get("flood-color", "#000000")),
+        opacity=_parse_filter_number(element.get("flood-opacity"), 1.0),
+    )
+
+
+def _resolve_shadow_chain(
+    filter_id: str,
+    primitives: list[tuple[str, object]],
+    chain: tuple[str, ...],
+) -> FilterSpec:
+    """Resolve blur+offset+componentTransfer+merge into one outer shadow effect."""
+    blur_node = primitives[0][1]
+    offset_node = primitives[1][1]
+    transfer_node = primitives[2][1]
+    opacity = 0.18
+    for child in transfer_node:
+        tag = child.tag
+        if "}" in tag:
+            tag = tag.split("}")[-1]
+        if tag.lower() == "fefunca":
+            opacity = _parse_filter_number(child.get("slope"), opacity)
+            break
+
+    return FilterSpec(
+        filter_id=filter_id,
+        kind="outer_shadow",
+        primitive_chain=chain,
+        dx=_parse_filter_number(offset_node.get("dx"), 0.0),
+        dy=_parse_filter_number(offset_node.get("dy"), 0.0),
+        blur=_parse_filter_number(blur_node.get("stdDeviation"), 0.0),
+        color="#000000",
+        opacity=opacity,
+    )
+
+
+def _resolve_glow_chain(
+    filter_id: str,
+    primitives: list[tuple[str, object]],
+    chain: tuple[str, ...],
+) -> FilterSpec:
+    """Resolve blur+composite into a source-colored glow approximation."""
+    blur_node = primitives[0][1]
+    blur = _parse_filter_number(blur_node.get("stdDeviation"), 0.0)
+    opacity = max(0.12, min(0.3, 1.2 / max(blur + 2.0, 2.0)))
+    return FilterSpec(
+        filter_id=filter_id,
+        kind="glow",
+        primitive_chain=chain,
+        blur=blur,
+        opacity=opacity,
+        use_source_color=True,
+    )
+
+
+def _parse_filter_number(value: Optional[str], default: float) -> float:
+    """Parse a numeric SVG filter parameter."""
+    if value is None:
+        return default
+    raw = value.strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
 
 
 def _resolve_gradient(
@@ -742,6 +896,40 @@ def parse_style(
             style.opacity = float(opacity_val)
         except ValueError:
             pass
+
+    # Parse filter reference
+    filter_val = get_attr("filter")
+    if filter_val is not None:
+        style.clear_unsupported_style("filter")
+        filter_token = filter_val.strip()
+        if filter_token.lower() == "none":
+            style.filter_effect = None
+        else:
+            filter_ref = URL_REF_PATTERN.match(filter_token)
+            if filter_ref:
+                filter_spec = get_filter(filter_ref.group(1))
+                if filter_spec is None:
+                    style.filter_effect = None
+                    style.record_unsupported_style(
+                        "filter",
+                        filter_token,
+                        "unresolved-url-reference",
+                    )
+                else:
+                    style.filter_effect = filter_spec
+                    if filter_spec.kind == "unsupported":
+                        style.record_unsupported_style(
+                            "filter",
+                            filter_token,
+                            "unsupported-filter-chain",
+                        )
+            else:
+                style.filter_effect = None
+                style.record_unsupported_style(
+                    "filter",
+                    filter_token,
+                    "unsupported-filter-token",
+                )
 
     # Parse font properties
     font_family_val = get_attr("font-family")

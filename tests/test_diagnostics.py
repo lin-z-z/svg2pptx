@@ -74,7 +74,7 @@ def test_scan_svg_directory_classifies_filter_support_levels(tmp_path):
 
     assert filter_result["filter_id"] == "shadow"
     assert filter_result["support_level"] == "approximate"
-    assert filter_result["current_action"] == "controlled_degradation"
+    assert filter_result["current_action"] == "ppt_outer_shadow"
     assert summary["filter_support_summary"]["support_levels"]["approximate"] == 1
 
 
@@ -161,7 +161,8 @@ def test_run_regression_exposes_filter_page_results(tmp_path):
 
     run_dir, manifest = run_regression(sample_dir, tmp_path / "artifacts", "filter_page")
 
-    assert manifest["filter_support_summary"]["support_levels"]["controlled_degradation"] == 1
+    assert manifest["filter_support_summary"]["support_levels"]["approximate"] == 1
     assert manifest["filter_page_results"][0]["filters"][0]["filter_id"] == "glow"
+    assert manifest["filter_page_results"][0]["filters"][0]["current_action"] == "ppt_glow"
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "Filter 页结果" in report

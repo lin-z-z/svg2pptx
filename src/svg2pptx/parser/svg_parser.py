@@ -12,6 +12,7 @@ from svg2pptx.parser.styles import (
     parse_style,
     clear_gradient_registry,
     parse_gradients_from_defs,
+    parse_filters_from_defs,
 )
 from svg2pptx.parser.transforms import Transform, parse_transform
 from svg2pptx.geometry.units import parse_length, parse_viewbox
@@ -224,6 +225,7 @@ class SVGParser:
                 tag = tag.split("}")[-1]
             if tag.lower() == "defs":
                 parse_gradients_from_defs(child)
+                parse_filters_from_defs(child)
 
         # Parse root style
         doc.root_style = parse_style(root)

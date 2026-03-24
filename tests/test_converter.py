@@ -313,6 +313,54 @@ class TestConvertFile:
         assert linear is not None
         assert linear.get("ang") == "0"
 
+    def test_shape_writer_maps_drop_shadow_filter_to_outer_shadow(self):
+        """Supported shadow filters should become DrawingML outerShdw effects."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <defs>
+                <filter id="cardShadow">
+                    <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0E5A8A" flood-opacity="0.08" />
+                </filter>
+            </defs>
+            <g filter="url(#cardShadow)">
+                <rect x="20" y="10" width="100" height="50" fill="#ffffff" />
+                <text x="30" y="40" font-size="18" fill="#0F172A">Title</text>
+            </g>
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        rect = prs.slides[0].shapes[0]
+        text = prs.slides[0].shapes[1]
+
+        effect_list = rect._element.spPr.find(qn("a:effectLst"))
+        shadow = effect_list.find(qn("a:outerShdw"))
+        assert shadow is not None
+        assert shadow.get("dist") == str(px_to_emu(8))
+        assert shadow.get("dir") == str(90 * 60000)
+        assert shadow.find(qn("a:srgbClr")).get("val") == "0E5A8A"
+        assert shadow.find(qn("a:srgbClr")).find(qn("a:alpha")).get("val") == "8000"
+        assert text._element.spPr.find(qn("a:effectLst")).find(qn("a:outerShdw")) is None
+
+    def test_shape_writer_maps_blur_composite_filter_to_glow(self):
+        """Blur plus composite should become a glow effect instead of staying silent."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <defs>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+            <rect x="20" y="10" width="100" height="50" fill="#0E5A8A" filter="url(#glow)" />
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        rect = prs.slides[0].shapes[0]
+
+        effect_list = rect._element.spPr.find(qn("a:effectLst"))
+        glow = effect_list.find(qn("a:glow"))
+        assert glow is not None
+        assert glow.get("rad") == str(px_to_emu(12))
+        assert glow.find(qn("a:srgbClr")).get("val") == "0E5A8A"
+
     def test_centered_cjk_title_gets_non_trivial_textbox_width(self):
         """Real centered Chinese titles should not collapse to latin-style width."""
         svg_path = FIXTURES_DIR / "oceanppt" / "full_15" / "slide_015.svg"

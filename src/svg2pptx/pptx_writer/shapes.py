@@ -12,7 +12,7 @@ from pptx.oxml.ns import qn
 from pptx.oxml.xmlchemy import OxmlElement
 
 from svg2pptx.config import Config
-from svg2pptx.parser.styles import GradientSpec, Style
+from svg2pptx.parser.styles import FilterSpec, GradientSpec, Style
 from svg2pptx.parser.shapes import (
     ParsedShape,
     RectShape,
@@ -220,10 +220,21 @@ def apply_style(
         style: Parsed SVG style.
         disable_shadow: Whether to disable shadow on the shape. Defaults to True.
     """
-    _apply_shadow(shape, disable_shadow)
-    _record_style_metadata(style, config, source="shape")
+    apply_effects(shape, style, disable_shadow=disable_shadow, config=config)
     _apply_fill_format(shape.fill, style, config)
     _apply_line_format(shape.line, style, config)
+
+
+def apply_effects(
+    shape: BaseShape,
+    style: Style,
+    disable_shadow: bool = True,
+    config: Optional[Config] = None,
+) -> None:
+    """Apply shadow/filter effects without touching fill or stroke."""
+    _apply_shadow(shape, disable_shadow)
+    _record_style_metadata(style, config, source="shape")
+    _apply_filter_effect(shape, style, config)
 
 
 def _apply_shadow(shape: BaseShape, disable_shadow: bool = True) -> None:
@@ -237,6 +248,47 @@ def _apply_shadow(shape: BaseShape, disable_shadow: bool = True) -> None:
             shape.shadow.visible = False
     except (AttributeError, NotImplementedError):
         pass
+
+
+def _apply_filter_effect(
+    shape: BaseShape,
+    style: Style,
+    config: Optional[Config],
+) -> None:
+    """Approximate supported SVG filters via DrawingML effects."""
+    effect = style.filter_effect
+    if effect is None:
+        return
+
+    sp_pr = getattr(shape._element, "spPr", None)
+    if sp_pr is None:
+        sp_pr = getattr(shape._element, "grpSpPr", None)
+    if sp_pr is None:
+        return
+
+    effect_list = sp_pr.find(qn("a:effectLst"))
+    if effect_list is None:
+        effect_list = OxmlElement("a:effectLst")
+        sp_pr.append(effect_list)
+    else:
+        for child in list(effect_list):
+            effect_list.remove(child)
+
+    if effect.kind == "outer_shadow":
+        effect_list.append(_build_outer_shadow(effect, style))
+        return
+
+    if effect.kind == "glow":
+        effect_list.append(_build_glow(effect, style))
+        return
+
+    _record_runtime_unsupported(
+        config,
+        "filter",
+        f"url(#{effect.filter_id})",
+        "unsupported-filter-chain",
+        source="shape",
+    )
 
 
 def _apply_fill_format(fill, style: Style, config: Optional[Config]) -> None:
@@ -338,6 +390,50 @@ def _apply_gradient_fill(
     return True
 
 
+def _build_outer_shadow(effect: FilterSpec, style: Style):
+    """Build an outer shadow effect from a parsed filter spec."""
+    shadow = OxmlElement("a:outerShdw")
+    shadow.set("blurRad", str(int(round(px_to_emu(max(effect.blur * 1.5, 0.0))))))
+    distance = math.hypot(effect.dx, effect.dy)
+    shadow.set("dist", str(int(round(px_to_emu(distance)))))
+    shadow.set("dir", str(_vector_angle(effect.dx, effect.dy)))
+    shadow.set("rotWithShape", "0")
+
+    color_node = OxmlElement("a:srgbClr")
+    color_node.set("val", _effect_color_hex(effect, style))
+    _append_alpha(color_node, max(0.0, min(effect.opacity * style.opacity, 1.0)))
+    shadow.append(color_node)
+    return shadow
+
+
+def _build_glow(effect: FilterSpec, style: Style):
+    """Build a glow effect from a parsed filter spec."""
+    glow = OxmlElement("a:glow")
+    glow.set("rad", str(int(round(px_to_emu(max(effect.blur * 2.0, 0.0))))))
+
+    color_node = OxmlElement("a:srgbClr")
+    color_node.set("val", _effect_color_hex(effect, style))
+    base_opacity = style.effective_fill_opacity
+    if style.fill == "none":
+        base_opacity = style.effective_stroke_opacity
+    _append_alpha(color_node, max(0.0, min(effect.opacity * base_opacity, 1.0)))
+    glow.append(color_node)
+    return glow
+
+
+def _effect_color_hex(effect: FilterSpec, style: Style) -> str:
+    """Resolve the final effect color in RRGGBB form."""
+    if effect.use_source_color:
+        if style.fill not in ("", "none"):
+            return parse_hex_color_to_str(style.fill)
+        if style.stroke not in ("", "none"):
+            return parse_hex_color_to_str(style.stroke)
+        return "000000"
+    if effect.color and effect.color != "none":
+        return parse_hex_color_to_str(effect.color)
+    return "000000"
+
+
 def _apply_line_format(line_format, style: Style, config: Optional[Config]) -> None:
     """Apply stroke color, width, and opacity using one shared code path."""
     if style.stroke == "none":
@@ -391,6 +487,14 @@ def _linear_gradient_angle(gradient: GradientSpec) -> int:
     """Map SVG linear gradient vector to DrawingML ang units (1/60000 deg)."""
     dx = gradient.x2 - gradient.x1
     dy = gradient.y2 - gradient.y1
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return 0
+    degrees = math.degrees(math.atan2(dy, dx)) % 360.0
+    return int(round(degrees * 60000))
+
+
+def _vector_angle(dx: float, dy: float) -> int:
+    """Map an XY vector to DrawingML angle units."""
     if abs(dx) < 1e-9 and abs(dy) < 1e-9:
         return 0
     degrees = math.degrees(math.atan2(dy, dx)) % 360.0

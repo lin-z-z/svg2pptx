@@ -128,6 +128,27 @@ class TestParseStyle:
         assert shape.style.fill_gradient.stops[0].opacity == pytest.approx(0.2)
         assert shape.style.unsupported_styles == []
 
+    def test_svg_parser_resolves_supported_filter_defs(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+            <defs>
+                <filter id="cardShadow">
+                    <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0E5A8A" flood-opacity="0.08" />
+                </filter>
+            </defs>
+            <g filter="url(#cardShadow)">
+                <rect x="10" y="10" width="80" height="30" fill="#ffffff" />
+            </g>
+        </svg>"""
+
+        doc = SVGParser().parse_string(svg)
+        group = doc.elements[0]
+        rect = group.children[0]
+
+        assert group.style.filter_effect is not None
+        assert group.style.filter_effect.kind == "outer_shadow"
+        assert group.style.filter_effect.dy == pytest.approx(8.0)
+        assert rect.style.filter_effect is None
+
 
 class TestParseTransform:
     """Tests for transform parsing."""
