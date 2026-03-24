@@ -1,5 +1,6 @@
 """PowerPoint text box creation from SVG text elements."""
 
+import unicodedata
 from typing import Optional
 
 from pptx.shapes.base import BaseShape
@@ -163,7 +164,8 @@ def _estimate_text_box_metrics(
         max_font_size = max(span.style.font_size for span in spans) * scale
         paragraph_heights.append(max_font_size * 1.4)
         paragraph_widths.append(
-            sum(_estimate_span_width(span, scale) for span in spans) + max_font_size
+            sum(_estimate_span_width(span, scale) for span in spans)
+            + max_font_size * 0.25
         )
 
     first_font_size = max(span.style.font_size for span in paragraphs[0]) * scale
@@ -179,11 +181,40 @@ def _estimate_text_box_metrics(
 def _estimate_span_width(span: TextSpan, scale: float) -> float:
     """Estimate span width in pixels for textbox sizing."""
     font_size_px = span.style.font_size * scale
-    char_count = len(span.text)
-    base_width = char_count * font_size_px * 0.6
-    letter_spacing = max(char_count - 1, 0) * span.style.letter_spacing * scale
+    base_width = sum(
+        _estimate_character_width(character, font_size_px)
+        for character in span.text
+    )
+    letter_spacing = (
+        max(len(span.text) - 1, 0) * span.style.letter_spacing * scale
+    )
     dx_padding = max(span.dx * scale, 0.0)
     return base_width + letter_spacing + dx_padding
+
+
+def _estimate_character_width(character: str, font_size_px: float) -> float:
+    """Estimate one character width with basic CJK and anchor-aware heuristics."""
+    if character.isspace():
+        return font_size_px * 0.35
+
+    east_asian_width = unicodedata.east_asian_width(character)
+    if east_asian_width in ("W", "F"):
+        return font_size_px
+
+    if character.isdigit():
+        return font_size_px * 0.58
+
+    category = unicodedata.category(character)
+    if category.startswith("P"):
+        return font_size_px * 0.5
+
+    if character.isupper():
+        return font_size_px * 0.62
+
+    if character.islower():
+        return font_size_px * 0.56
+
+    return font_size_px * 0.6
 
 
 def _apply_run_style(run, style, scale: float) -> None:

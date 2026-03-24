@@ -11,6 +11,9 @@ from pptx.util import Emu
 from svg2pptx import svg_to_pptx, SVGConverter, Config
 from svg2pptx.geometry.units import px_to_emu
 from svg2pptx.pptx_writer.shapes import parse_hex_color
+from svg2pptx.pptx_writer.text import _estimate_span_width
+from svg2pptx.parser.svg_parser import TextSpan
+from svg2pptx.parser.styles import Style
 
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -244,6 +247,29 @@ class TestConvertFile:
             any(len(paragraph.runs) >= 2 for paragraph in shape.text_frame.paragraphs)
             for shape in text_shapes
         )
+
+    def test_text_width_estimator_treats_cjk_as_wider_than_latin(self):
+        """Chinese characters should reserve more width than latin labels."""
+        cjk_span = TextSpan(text="感谢聆听", style=Style(font_size=82))
+        latin_span = TextSpan(text="TEST", style=Style(font_size=82))
+
+        assert _estimate_span_width(cjk_span, 1.0) > _estimate_span_width(
+            latin_span, 1.0
+        )
+
+    def test_centered_cjk_title_gets_non_trivial_textbox_width(self):
+        """Real centered Chinese titles should not collapse to latin-style width."""
+        svg_path = FIXTURES_DIR / "oceanppt" / "full_15" / "slide_015.svg"
+        converter = SVGConverter()
+        presentation = converter.convert_string(svg_path.read_text(encoding="utf-8"))
+
+        title_shape = next(
+            shape
+            for shape in presentation.slides[0].shapes
+            if getattr(shape, "text", "") == "感谢聆听"
+        )
+
+        assert title_shape.width >= Emu(px_to_emu(4 * 82))
 
 
 class TestAddToSlide:
