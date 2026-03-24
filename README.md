@@ -13,7 +13,9 @@ Or install from source:
 ```bash
 git clone https://github.com/benouinirachid/svg2pptx.git
 cd svg2pptx
-pip install -e ".[dev]"
+conda activate svg2pptx
+pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Quick Start
