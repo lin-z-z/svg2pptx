@@ -1,5 +1,6 @@
 """Main SVG to PowerPoint converter."""
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Optional, Union
 
@@ -12,6 +13,7 @@ from svg2pptx.parser.svg_parser import SVGParser, SVGDocument, GroupElement, Tex
 from svg2pptx.parser.shapes import ParsedShape
 from svg2pptx.parser.paths import PathShape
 from svg2pptx.geometry.units import px_to_emu
+from svg2pptx.geometry.transforms import Transform
 from svg2pptx.pptx_writer.shapes import create_shape
 from svg2pptx.pptx_writer.freeform import create_freeform
 from svg2pptx.pptx_writer.groups import create_group, add_element_to_shapes
@@ -177,22 +179,33 @@ class SVGConverter:
         scale: float,
     ) -> None:
         """Add SVG elements to a slide."""
-        # Apply viewBox transform if present
-        vb_scale_x = svg_doc.scale_x * scale
-        vb_scale_y = svg_doc.scale_y * scale
-        vb_offset_x = offset_x + px_to_emu(svg_doc.offset_x * scale)
-        vb_offset_y = offset_y + px_to_emu(svg_doc.offset_y * scale)
-
-        # Use average scale for uniform scaling
-        effective_scale = (vb_scale_x + vb_scale_y) / 2
+        viewport_transform = Transform(
+            a=svg_doc.scale_x * scale,
+            d=svg_doc.scale_y * scale,
+            e=svg_doc.offset_x * scale,
+            f=svg_doc.offset_y * scale,
+        )
 
         for element in svg_doc.elements:
             add_element_to_shapes(
                 slide.shapes,
-                element,
-                vb_offset_x,
-                vb_offset_y,
-                effective_scale,
+                self._apply_document_transform(element, viewport_transform),
+                offset_x,
+                offset_y,
+                1.0,
                 flatten=self.config.flatten_groups,
                 config=self.config,
             )
+
+    def _apply_document_transform(self, element, viewport_transform: Transform):
+        """Apply the document-level viewport transform once for all writers."""
+        transformed = replace(
+            element,
+            transform=viewport_transform.compose(element.transform),
+        )
+        if isinstance(transformed, GroupElement):
+            transformed.children = [
+                self._apply_document_transform(child, viewport_transform)
+                for child in transformed.children
+            ]
+        return transformed

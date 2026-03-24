@@ -166,6 +166,27 @@ class TestConvertFile:
         assert grouped_shape.width == expected_width
         assert grouped_shape.height == expected_height
 
+    def test_viewbox_mapping_scales_x_and_y_consistently(self):
+        """viewBox mapping should use one document transform for all shape types."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 100 100">
+            <rect x="10" y="20" width="30" height="40" fill="#ff0000"/>
+            <circle cx="50" cy="50" r="10" fill="#00ff00"/>
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        rect = prs.slides[0].shapes[0]
+        circle = prs.slides[0].shapes[1]
+
+        assert rect.left == Emu(px_to_emu(20))
+        assert rect.top == Emu(px_to_emu(20))
+        assert rect.width == Emu(px_to_emu(60))
+        assert rect.height == Emu(px_to_emu(40))
+
+        assert circle.left == Emu(px_to_emu(80))
+        assert circle.top == Emu(px_to_emu(40))
+        assert circle.width == Emu(px_to_emu(40))
+        assert circle.height == Emu(px_to_emu(20))
+
 
 class TestAddToSlide:
     """Tests for adding SVG to existing slides."""
