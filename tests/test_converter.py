@@ -10,6 +10,7 @@ from pptx.util import Emu
 
 from svg2pptx import svg_to_pptx, SVGConverter, Config
 from svg2pptx.geometry.units import px_to_emu
+from svg2pptx.pptx_writer.shapes import parse_hex_color
 
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -186,6 +187,63 @@ class TestConvertFile:
         assert circle.top == Emu(px_to_emu(40))
         assert circle.width == Emu(px_to_emu(40))
         assert circle.height == Emu(px_to_emu(20))
+
+    def test_text_writer_preserves_inline_tspan_runs(self):
+        """Inline tspans should become editable runs in one paragraph."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <text x="20" y="40" font-family="Noto Sans SC" font-size="32" fill="#0F172A">
+                5-10<tspan font-size="48" fill="#0E5A8A" dx="8">x</tspan>
+            </text>
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        text_shape = prs.slides[0].shapes[0]
+        paragraph = text_shape.text_frame.paragraphs[0]
+
+        assert len(text_shape.text_frame.paragraphs) == 1
+        assert [run.text for run in paragraph.runs] == ["5-10", "x"]
+        assert paragraph.runs[0].font.size.pt == 32
+        assert paragraph.runs[1].font.size.pt == 48
+        assert paragraph.runs[1].font.color.rgb == parse_hex_color("#0E5A8A")
+
+    def test_text_writer_turns_multiline_tspan_into_paragraphs(self):
+        """dy-driven tspans should stay inside one textbox as multiple paragraphs."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="400" height="180">
+            <text x="20" y="40" font-family="Noto Sans SC" font-size="18" fill="#64748B">
+                <tspan x="20" dy="0">第一行</tspan>
+                <tspan x="20" dy="28">第二行</tspan>
+                <tspan x="20" dy="28">第三行</tspan>
+            </text>
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        text_shape = prs.slides[0].shapes[0]
+        paragraphs = text_shape.text_frame.paragraphs
+
+        assert len(paragraphs) == 3
+        assert [paragraph.text for paragraph in paragraphs] == [
+            "第一行",
+            "第二行",
+            "第三行",
+        ]
+
+    def test_text_writer_handles_oceanppt_fixture_tspans(self):
+        """Real OceanPPT text pages should produce editable multi-run text boxes."""
+        svg_path = FIXTURES_DIR / "oceanppt" / "baseline_5" / "slide_006.svg"
+        converter = SVGConverter()
+        presentation = converter.convert_string(svg_path.read_text(encoding="utf-8"))
+
+        text_shapes = [
+            shape for shape in presentation.slides[0].shapes if hasattr(shape, "text_frame")
+        ]
+        assert any(
+            len(shape.text_frame.paragraphs) >= 3
+            for shape in text_shapes
+        )
+        assert any(
+            any(len(paragraph.runs) >= 2 for paragraph in shape.text_frame.paragraphs)
+            for shape in text_shapes
+        )
 
 
 class TestAddToSlide:
