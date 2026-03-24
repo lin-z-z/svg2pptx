@@ -71,3 +71,39 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
 
     saved_manifest = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
     assert saved_manifest["sample_set"] == "smoke"
+    assert saved_manifest["unsupported_styles_summary"] == []
+
+
+def test_run_regression_records_unsupported_style_items(tmp_path):
+    sample_dir = tmp_path / "samples"
+    sample_dir.mkdir()
+    (sample_dir / "style_fallback.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+        <defs>
+          <linearGradient id="grad1">
+            <stop offset="0%" stop-color="#ff0000" />
+            <stop offset="100%" stop-color="#0000ff" />
+          </linearGradient>
+        </defs>
+        <rect
+          x="10"
+          y="10"
+          width="80"
+          height="30"
+          rx="12"
+          ry="6"
+          fill="url(#grad1)"
+          stroke="#112233"
+        />
+        </svg>""",
+        encoding="utf-8",
+    )
+
+    run_dir, manifest = run_regression(sample_dir, tmp_path / "artifacts", "style_fallback")
+
+    reasons = {item["reason"] for item in manifest["unsupported_styles_summary"]}
+    assert "url-paint-fallback" in reasons
+    assert "non-uniform-radius-fallback" in reasons
+    assert manifest["results"][0]["unsupported_styles"]
+    report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
+    assert "不支持样式项" in report

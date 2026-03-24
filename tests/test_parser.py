@@ -68,6 +68,16 @@ class TestParseStyle:
         assert style.fill_opacity == 0.8
         assert style.effective_fill_opacity == 0.4  # 0.5 * 0.8
 
+    def test_color_embedded_alpha_updates_fill_and_stroke_opacity(self):
+        element = fromstring(
+            '<rect fill="rgba(255, 0, 0, 0.25)" stroke="#00ff0080" />'
+        )
+        style = parse_style(element)
+        assert style.fill == "#ff0000"
+        assert style.fill_opacity == pytest.approx(0.25)
+        assert style.stroke == "#00ff00"
+        assert style.stroke_opacity == pytest.approx(128 / 255)
+
     def test_inherit_from_parent(self):
         parent_style = Style(fill="#ff0000", stroke="#0000ff", font_size=16.0)
         element = fromstring('<rect stroke-width="2"/>')
@@ -80,6 +90,20 @@ class TestParseStyle:
         element = fromstring('<text letter-spacing="2">Hello</text>')
         style = parse_style(element)
         assert style.letter_spacing == 2.0
+
+    def test_url_paint_records_unsupported_style(self):
+        element = fromstring('<rect fill="url(#grad1)" stroke="url(#grad2)" />')
+        style = parse_style(element)
+        assert {
+            "property": "fill",
+            "value": "url(#grad1)",
+            "reason": "url-paint-fallback",
+        } in style.unsupported_styles
+        assert {
+            "property": "stroke",
+            "value": "url(#grad2)",
+            "reason": "url-paint-fallback",
+        } in style.unsupported_styles
 
 
 class TestParseTransform:

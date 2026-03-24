@@ -74,6 +74,7 @@ def _build_score_rows(svg_files: list[Path]) -> list[dict]:
 
 def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: dict, results: list[dict]) -> None:
     template = REPORT_TEMPLATE_PATH.read_text(encoding="utf-8")
+    unsupported_summary = _summarize_unsupported_styles(results)
     report = (
         template.replace("{{sample_set}}", sample_set)
         .replace("{{generated_at}}", datetime.now(timezone.utc).isoformat())
@@ -84,7 +85,39 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
         .replace("{{failure_count}}", str(sum(1 for item in results if item["status"] != "success")))
         .replace("{{risk_distribution}}", json.dumps(summary["risk_distribution"], ensure_ascii=False, indent=2))
     )
+    if unsupported_summary:
+        report += (
+            "\n\n## 不支持样式项\n\n```json\n"
+            + json.dumps(unsupported_summary, ensure_ascii=False, indent=2)
+            + "\n```\n"
+        )
     (run_dir / "reports" / "regression_report.md").write_text(report, encoding="utf-8")
+
+
+def _summarize_unsupported_styles(results: list[dict]) -> list[dict]:
+    counts: dict[tuple[str, str, str, str], int] = {}
+    for result in results:
+        for item in result.get("unsupported_styles", []):
+            key = (
+                item.get("property", ""),
+                item.get("reason", ""),
+                item.get("value", ""),
+                item.get("source", ""),
+            )
+            counts[key] = counts.get(key, 0) + 1
+
+    summary: list[dict] = []
+    for (property_name, reason, value, source), count in sorted(counts.items()):
+        entry = {
+            "property": property_name,
+            "reason": reason,
+            "value": value,
+            "count": count,
+        }
+        if source:
+            entry["source"] = source
+        summary.append(entry)
+    return summary
 
 
 def run_regression(
@@ -136,6 +169,7 @@ def run_regression(
     for svg_file in svg_files:
         start = time.perf_counter()
         pptx_path = pptx_dir / f"{svg_file.stem}.pptx"
+        active_config.reset_runtime_reports()
         try:
             svg_to_pptx(str(svg_file), str(pptx_path), config=active_config)
         except Exception as exc:  # pragma: no cover - exercised via manifest output
@@ -146,6 +180,7 @@ def run_regression(
                     "output_relpath": str(pptx_path.relative_to(run_dir)),
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                     "error": str(exc),
+                    "unsupported_styles": list(active_config.unsupported_styles),
                 }
             )
         else:
@@ -156,10 +191,12 @@ def run_regression(
                     "output_relpath": str(pptx_path.relative_to(run_dir)),
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                     "error": "",
+                    "unsupported_styles": list(active_config.unsupported_styles),
                 }
             )
 
     _render_report(run_dir, sample_dir, sample_set_name, summary, results)
+    unsupported_summary = _summarize_unsupported_styles(results)
 
     run_manifest = {
         "schema_version": "1.0",
@@ -178,6 +215,7 @@ def run_regression(
             "success_count": sum(1 for item in results if item["status"] == "success"),
             "failure_count": sum(1 for item in results if item["status"] != "success"),
         },
+        "unsupported_styles_summary": unsupported_summary,
         "results": results,
     }
     (run_dir / "run.json").write_text(

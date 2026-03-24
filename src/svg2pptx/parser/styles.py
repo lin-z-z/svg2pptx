@@ -100,6 +100,7 @@ class Style:
     font_weight: str = "normal"
     letter_spacing: float = 0.0
     text_anchor: str = "start"
+    unsupported_styles: list[dict[str, str]] = field(default_factory=list)
 
     def with_parent(self, parent: "Style") -> "Style":
         """
@@ -146,6 +147,29 @@ class Style:
     def effective_stroke_opacity(self) -> float:
         """Combined stroke and overall opacity."""
         return self.stroke_opacity * self.opacity
+
+    def clear_unsupported_style(self, property_name: str) -> None:
+        """Remove inherited unsupported metadata for one property."""
+        self.unsupported_styles = [
+            item
+            for item in self.unsupported_styles
+            if item.get("property") != property_name
+        ]
+
+    def record_unsupported_style(
+        self,
+        property_name: str,
+        value: str,
+        reason: str,
+    ) -> None:
+        """Record a degraded style mapping for later diagnostics."""
+        item = {
+            "property": property_name,
+            "value": value,
+            "reason": reason,
+        }
+        if item not in self.unsupported_styles:
+            self.unsupported_styles.append(item)
 
 
 def clear_gradient_registry() -> None:
@@ -257,6 +281,9 @@ def _parse_color_value(color_str: str) -> str:
         if len(color_str) == 4:
             # Short hex (#rgb -> #rrggbb)
             return "#" + "".join(c * 2 for c in color_str[1:])
+        elif len(color_str) == 5:
+            # Short hex with alpha (#rgba -> #rrggbb)
+            return "#" + "".join(c * 2 for c in color_str[1:4])
         elif len(color_str) == 7:
             return color_str
         elif len(color_str) == 9:
@@ -320,6 +347,9 @@ def parse_color(color_str: str) -> str:
         if len(color_str_lower) == 4:
             # Short hex (#rgb -> #rrggbb)
             return "#" + "".join(c * 2 for c in color_str_lower[1:])
+        elif len(color_str_lower) == 5:
+            # Short hex with alpha (#rgba -> #rrggbb)
+            return "#" + "".join(c * 2 for c in color_str_lower[1:4])
         elif len(color_str_lower) == 7:
             return color_str_lower
         elif len(color_str_lower) == 9:
@@ -340,6 +370,40 @@ def parse_color(color_str: str) -> str:
 
     # Unknown format, return as-is
     return color_str_lower
+
+
+def parse_color_alpha(color_str: str) -> Optional[float]:
+    """
+    Parse an alpha channel embedded in a CSS/SVG color token.
+
+    Returns None when the color token does not carry its own alpha channel.
+    """
+    if not color_str:
+        return None
+
+    normalized = color_str.strip().lower()
+    rgba_match = RGBA_PATTERN.match(normalized)
+    if rgba_match:
+        try:
+            return max(0.0, min(float(rgba_match.group(4)), 1.0))
+        except ValueError:
+            return None
+
+    if normalized.startswith("#"):
+        if len(normalized) == 5:
+            try:
+                alpha = int(normalized[4] * 2, 16)
+                return alpha / 255.0
+            except ValueError:
+                return None
+        if len(normalized) == 9:
+            try:
+                alpha = int(normalized[7:9], 16)
+                return alpha / 255.0
+            except ValueError:
+                return None
+
+    return None
 
 
 def parse_style_attribute(style_str: str) -> dict[str, str]:
@@ -399,6 +463,7 @@ def parse_style(
             font_weight=parent_style.font_weight,
             letter_spacing=parent_style.letter_spacing,
             text_anchor=parent_style.text_anchor,
+            unsupported_styles=list(parent_style.unsupported_styles),
         )
     else:
         style = Style(fill=default_fill, stroke=default_stroke)
@@ -421,7 +486,24 @@ def parse_style(
     # Parse fill
     fill_val = get_attr("fill")
     if fill_val is not None:
+        style.clear_unsupported_style("fill")
         style.fill = parse_color(fill_val)
+        fill_alpha = parse_color_alpha(fill_val)
+        if fill_alpha is not None:
+            style.fill_opacity *= fill_alpha
+        fill_ref = URL_REF_PATTERN.match(fill_val.strip())
+        if fill_ref:
+            style.record_unsupported_style(
+                "fill",
+                fill_val.strip(),
+                "url-paint-fallback",
+            )
+        elif style.fill not in ("none",) and not style.fill.startswith("#"):
+            style.record_unsupported_style(
+                "fill",
+                fill_val.strip(),
+                "unparsed-color-token",
+            )
 
     # Parse fill-opacity
     fill_opacity_val = get_attr("fill-opacity")
@@ -434,7 +516,24 @@ def parse_style(
     # Parse stroke
     stroke_val = get_attr("stroke")
     if stroke_val is not None:
+        style.clear_unsupported_style("stroke")
         style.stroke = parse_color(stroke_val)
+        stroke_alpha = parse_color_alpha(stroke_val)
+        if stroke_alpha is not None:
+            style.stroke_opacity *= stroke_alpha
+        stroke_ref = URL_REF_PATTERN.match(stroke_val.strip())
+        if stroke_ref:
+            style.record_unsupported_style(
+                "stroke",
+                stroke_val.strip(),
+                "url-paint-fallback",
+            )
+        elif style.stroke not in ("none",) and not style.stroke.startswith("#"):
+            style.record_unsupported_style(
+                "stroke",
+                stroke_val.strip(),
+                "unparsed-color-token",
+            )
 
     # Parse stroke-width
     stroke_width_val = get_attr("stroke-width")

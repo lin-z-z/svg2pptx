@@ -8,7 +8,7 @@ from pptx.util import Emu
 
 from svg2pptx.parser.shapes import PolygonShape, PolylineShape
 from svg2pptx.parser.paths import PathShape
-from svg2pptx.parser.styles import Style
+from svg2pptx.config import Config
 from svg2pptx.geometry.units import px_to_emu
 from svg2pptx.pptx_writer.shapes import apply_style
 
@@ -19,6 +19,7 @@ def create_freeform(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> Optional[BaseShape]:
     """
     Create a PowerPoint freeform shape from polygon, polyline, or path.
@@ -35,11 +36,11 @@ def create_freeform(
     """
     if isinstance(parsed_shape, PathShape):
         return create_freeform_from_path(
-            shapes, parsed_shape, offset_x, offset_y, scale
+            shapes, parsed_shape, offset_x, offset_y, scale, config=config
         )
     else:
         return create_freeform_from_points(
-            shapes, parsed_shape, offset_x, offset_y, scale
+            shapes, parsed_shape, offset_x, offset_y, scale, config=config
         )
 
 
@@ -49,6 +50,7 @@ def create_freeform_from_points(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> Optional[BaseShape]:
     """
     Create a freeform shape from polygon or polyline points.
@@ -88,7 +90,12 @@ def create_freeform_from_points(
     shape = builder.convert_to_shape(offset_x, offset_y)
 
     # Apply styling
-    apply_style(shape, parsed_shape.style)
+    apply_style(
+        shape,
+        parsed_shape.style,
+        disable_shadow=config.disable_shadows if config else True,
+        config=config,
+    )
 
     return shape
 
@@ -99,6 +106,7 @@ def create_freeform_from_path(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> Optional[BaseShape]:
     """
     Create a freeform shape from an SVG path.
@@ -161,6 +169,11 @@ def create_freeform_from_path(
     shape = builder.convert_to_shape(offset_x, offset_y)
 
     # Apply styling
-    apply_style(shape, path.style)
+    apply_style(
+        shape,
+        path.style,
+        disable_shadow=config.disable_shadows if config else True,
+        config=config,
+    )
 
     return shape

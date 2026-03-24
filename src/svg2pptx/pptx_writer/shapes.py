@@ -7,7 +7,10 @@ from pptx.shapes.shapetree import SlideShapes, GroupShapes
 from pptx.util import Emu
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
+from pptx.oxml.ns import qn
+from pptx.oxml.xmlchemy import OxmlElement
 
+from svg2pptx.config import Config
 from svg2pptx.parser.styles import Style
 from svg2pptx.parser.shapes import (
     ParsedShape,
@@ -32,6 +35,7 @@ def create_shape(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> Optional[BaseShape]:
     """
     Create a PowerPoint shape from a parsed SVG shape.
@@ -47,15 +51,43 @@ def create_shape(
         Created shape or None.
     """
     if isinstance(parsed_shape, RectShape):
-        return create_rectangle(shapes, parsed_shape, offset_x, offset_y, scale)
+        return create_rectangle(
+            shapes,
+            parsed_shape,
+            offset_x,
+            offset_y,
+            scale,
+            config=config,
+        )
     elif isinstance(parsed_shape, (CircleShape, EllipseShape)):
-        return create_oval(shapes, parsed_shape, offset_x, offset_y, scale)
+        return create_oval(
+            shapes,
+            parsed_shape,
+            offset_x,
+            offset_y,
+            scale,
+            config=config,
+        )
     elif isinstance(parsed_shape, LineShape):
-        return create_line(shapes, parsed_shape, offset_x, offset_y, scale)
+        return create_line(
+            shapes,
+            parsed_shape,
+            offset_x,
+            offset_y,
+            scale,
+            config=config,
+        )
     elif isinstance(parsed_shape, (PolygonShape, PolylineShape)):
         from svg2pptx.pptx_writer.freeform import create_freeform
 
-        return create_freeform(shapes, parsed_shape, offset_x, offset_y, scale)
+        return create_freeform(
+            shapes,
+            parsed_shape,
+            offset_x,
+            offset_y,
+            scale,
+            config=config,
+        )
     return None
 
 
@@ -65,6 +97,7 @@ def create_rectangle(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> BaseShape:
     """Create a PowerPoint rectangle shape."""
     x, y, width_px, height_px = transform_rect_to_bbox(
@@ -86,11 +119,16 @@ def create_rectangle(
         shape = shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height
         )
-        # Note: python-pptx doesn't easily support setting corner radius
+        _apply_corner_radius(shape, rect, width_px, height_px, config)
     else:
         shape = shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
 
-    apply_style(shape, rect.style)
+    apply_style(
+        shape,
+        rect.style,
+        disable_shadow=config.disable_shadows if config else True,
+        config=config,
+    )
     return shape
 
 
@@ -100,6 +138,7 @@ def create_oval(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> BaseShape:
     """Create a PowerPoint oval (ellipse/circle) shape."""
     if isinstance(oval, CircleShape):
@@ -125,7 +164,12 @@ def create_oval(
     height = px_to_emu(height_px * scale)
 
     shape = shapes.add_shape(MSO_SHAPE.OVAL, left, top, width, height)
-    apply_style(shape, oval.style)
+    apply_style(
+        shape,
+        oval.style,
+        disable_shadow=config.disable_shadows if config else True,
+        config=config,
+    )
     return shape
 
 
@@ -135,6 +179,7 @@ def create_line(
     offset_x: int = 0,
     offset_y: int = 0,
     scale: float = 1.0,
+    config: Optional[Config] = None,
 ) -> BaseShape:
     """Create a PowerPoint line connector."""
     from pptx.enum.shapes import MSO_CONNECTOR
@@ -153,28 +198,19 @@ def create_line(
         MSO_CONNECTOR.STRAIGHT, start_x, start_y, end_x, end_y
     )
 
-    # Disable shadow on line
-    try:
-        connector.shadow.inherit = False
-        if hasattr(connector.shadow, 'visible'):
-            connector.shadow.visible = False
-    except (AttributeError, NotImplementedError):
-        pass
-
-    # Apply stroke style to line
-    if line.style.stroke != "none":
-        try:
-            color = parse_hex_color(line.style.stroke)
-            connector.line.color.rgb = color
-        except ValueError:
-            pass
-
-    connector.line.width = Emu(px_to_emu(line.style.stroke_width))
+    _apply_shadow(connector, disable_shadow=config.disable_shadows if config else True)
+    _record_style_metadata(line.style, config, source="connector")
+    _apply_line_format(connector.line, line.style, config)
 
     return connector
 
 
-def apply_style(shape: BaseShape, style: Style, disable_shadow: bool = True) -> None:
+def apply_style(
+    shape: BaseShape,
+    style: Style,
+    disable_shadow: bool = True,
+    config: Optional[Config] = None,
+) -> None:
     """
     Apply SVG style to a PowerPoint shape.
 
@@ -183,46 +219,154 @@ def apply_style(shape: BaseShape, style: Style, disable_shadow: bool = True) -> 
         style: Parsed SVG style.
         disable_shadow: Whether to disable shadow on the shape. Defaults to True.
     """
-    # Disable shadow if requested
-    if disable_shadow:
-        try:
-            shape.shadow.inherit = False
-            # Setting shadow to no shadow by making it transparent
-            if hasattr(shape.shadow, 'visible'):
-                shape.shadow.visible = False
-        except (AttributeError, NotImplementedError):
-            # Some shapes may not support shadow property
-            pass
+    _apply_shadow(shape, disable_shadow)
+    _record_style_metadata(style, config, source="shape")
+    _apply_fill_format(shape.fill, style, config)
+    _apply_line_format(shape.line, style, config)
 
-    # Apply fill
-    fill = shape.fill
+
+def _apply_shadow(shape: BaseShape, disable_shadow: bool = True) -> None:
+    """Disable PowerPoint default shadow when requested."""
+    if not disable_shadow:
+        return
+
+    try:
+        shape.shadow.inherit = False
+        if hasattr(shape.shadow, "visible"):
+            shape.shadow.visible = False
+    except (AttributeError, NotImplementedError):
+        pass
+
+
+def _apply_fill_format(fill, style: Style, config: Optional[Config]) -> None:
+    """Apply fill color and opacity using one shared code path."""
     if style.fill == "none":
-        fill.background()  # No fill
-    else:
-        try:
-            color = parse_hex_color(style.fill)
-            fill.solid()
-            fill.fore_color.rgb = color
-            
-            # Apply fill opacity
-            if style.effective_fill_opacity < 1.0:
-                # python-pptx doesn't directly support fill opacity
-                # We'd need to modify the XML directly for this
-                pass
-        except ValueError:
-            fill.background()
+        fill.background()
+        return
 
-    # Apply stroke
-    line = shape.line
+    try:
+        color = parse_hex_color(style.fill)
+    except ValueError:
+        fill.background()
+        _record_runtime_unsupported(
+            config,
+            "fill",
+            style.fill,
+            "unparsed-color-token",
+            source="shape",
+        )
+        return
+
+    fill.solid()
+    fill.fore_color.rgb = color
+    _apply_opacity_to_solid_fill(fill._xPr, style.effective_fill_opacity)
+
+
+def _apply_line_format(line_format, style: Style, config: Optional[Config]) -> None:
+    """Apply stroke color, width, and opacity using one shared code path."""
     if style.stroke == "none":
-        line.fill.background()  # No stroke
-    else:
-        try:
-            color = parse_hex_color(style.stroke)
-            line.color.rgb = color
-            line.width = Emu(px_to_emu(style.stroke_width))
-        except ValueError:
-            line.fill.background()
+        line_format.fill.background()
+        return
+
+    try:
+        color = parse_hex_color(style.stroke)
+    except ValueError:
+        line_format.fill.background()
+        _record_runtime_unsupported(
+            config,
+            "stroke",
+            style.stroke,
+            "unparsed-color-token",
+            source="shape",
+        )
+        return
+
+    line_format.color.rgb = color
+    line_format.width = Emu(px_to_emu(style.stroke_width))
+    if line_format._ln is not None:
+        _apply_opacity_to_solid_fill(line_format._ln, style.effective_stroke_opacity)
+
+
+def _apply_opacity_to_solid_fill(container, opacity: float) -> None:
+    """Write SVG opacity to DrawingML alpha under the solid fill color node."""
+    solid_fill = container.find(qn("a:solidFill"))
+    if solid_fill is None or len(solid_fill) == 0:
+        return
+
+    color_choice = solid_fill[0]
+    for alpha in color_choice.findall(qn("a:alpha")):
+        color_choice.remove(alpha)
+
+    clamped = max(0.0, min(opacity, 1.0))
+    if clamped >= 0.9999:
+        return
+
+    alpha = OxmlElement("a:alpha")
+    alpha.set("val", str(int(round(clamped * 100000))))
+    color_choice.append(alpha)
+
+
+def _apply_corner_radius(
+    shape: BaseShape,
+    rect: RectShape,
+    width_px: float,
+    height_px: float,
+    config: Optional[Config],
+) -> None:
+    """Map SVG rx/ry to the single rounded-rectangle adjustment that PPT supports."""
+    if not getattr(shape, "adjustments", None):
+        return
+
+    radii = [radius for radius in (rect.rx, rect.ry) if radius > 0]
+    if not radii:
+        return
+
+    min_dimension = min(width_px, height_px)
+    if min_dimension <= 0:
+        return
+
+    radius = min(radii)
+    shape.adjustments[0] = max(0.0, min(radius / min_dimension, 0.5))
+
+    if rect.rx > 0 and rect.ry > 0 and abs(rect.rx - rect.ry) > 0.01:
+        _record_runtime_unsupported(
+            config,
+            "radius",
+            f"rx={rect.rx},ry={rect.ry}",
+            "non-uniform-radius-fallback",
+            source="shape",
+        )
+
+
+def _record_style_metadata(
+    style: Style,
+    config: Optional[Config],
+    source: str,
+) -> None:
+    """Forward parser-stage unsupported style metadata into runtime diagnostics."""
+    if config is None:
+        return
+
+    for item in style.unsupported_styles:
+        config.record_unsupported_style(
+            item["property"],
+            item["value"],
+            item["reason"],
+            source=source,
+        )
+
+
+def _record_runtime_unsupported(
+    config: Optional[Config],
+    property_name: str,
+    value: str,
+    reason: str,
+    source: str,
+) -> None:
+    """Record a downgraded runtime style item when config is available."""
+    if config is None:
+        return
+    config.record_unsupported_style(property_name, value, reason, source=source)
 
 
 def parse_hex_color(hex_color: str) -> RGBColor:

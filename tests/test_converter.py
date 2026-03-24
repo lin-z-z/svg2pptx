@@ -6,6 +6,7 @@ import tempfile
 import os
 
 from pptx import Presentation
+from pptx.oxml.ns import qn
 from pptx.util import Emu
 
 from svg2pptx import svg_to_pptx, SVGConverter, Config
@@ -256,6 +257,33 @@ class TestConvertFile:
         assert _estimate_span_width(cjk_span, 1.0) > _estimate_span_width(
             latin_span, 1.0
         )
+
+    def test_shape_writer_maps_opacity_and_corner_radius(self):
+        """Basic fill/stroke opacity and rounded radius should be written into PPT XML."""
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+            <rect
+                x="20"
+                y="10"
+                width="100"
+                height="50"
+                rx="10"
+                ry="20"
+                fill="rgba(255, 0, 0, 0.5)"
+                stroke="#00ff00"
+                stroke-opacity="0.25"
+                stroke-width="4"
+            />
+        </svg>"""
+
+        prs = SVGConverter().convert_string(svg)
+        shape = prs.slides[0].shapes[0]
+
+        fill_color = shape.fill._xPr.find(qn("a:solidFill"))[0]
+        line_color = shape.line._ln.find(qn("a:solidFill"))[0]
+
+        assert fill_color.find(qn("a:alpha")).get("val") == "50000"
+        assert line_color.find(qn("a:alpha")).get("val") == "25000"
+        assert shape.adjustments[0] == pytest.approx(0.2, abs=1e-4)
 
     def test_centered_cjk_title_gets_non_trivial_textbox_width(self):
         """Real centered Chinese titles should not collapse to latin-style width."""

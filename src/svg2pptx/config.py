@@ -1,6 +1,6 @@
 """Configuration options for SVG to PowerPoint conversion."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pptx.util import Inches
 
 
@@ -46,4 +46,30 @@ class Config:
     disable_shadows: bool = True
     convert_text: bool = True
     convert_shapes: bool = True
+    unsupported_styles: list[dict[str, str]] = field(
+        default_factory=list,
+        repr=False,
+    )
+
+    def reset_runtime_reports(self) -> None:
+        """Clear per-conversion diagnostic output."""
+        self.unsupported_styles.clear()
+
+    def record_unsupported_style(
+        self,
+        property_name: str,
+        value: str,
+        reason: str,
+        source: str = "",
+    ) -> None:
+        """Record a unique downgraded style item for diagnostics."""
+        item = {
+            "property": property_name,
+            "value": value,
+            "reason": reason,
+        }
+        if source:
+            item["source"] = source
+        if item not in self.unsupported_styles:
+            self.unsupported_styles.append(item)
 

@@ -127,6 +127,7 @@ class SVGConverter:
 
     def _create_presentation(self, svg_doc: SVGDocument) -> Presentation:
         """Create a new presentation and add the SVG content."""
+        self.config.reset_runtime_reports()
         prs = Presentation()
 
         # Set slide dimensions

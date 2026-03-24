@@ -95,10 +95,24 @@ def add_element_to_shapes(
         create_group(shapes, element, offset_x, offset_y, scale, flatten, config)
     elif isinstance(element, PathShape):
         if config.convert_shapes:
-            create_freeform(shapes, element, offset_x, offset_y, scale)
+            create_freeform(
+                shapes,
+                element,
+                offset_x,
+                offset_y,
+                scale,
+                config=config,
+            )
     elif isinstance(element, TextElement):
         if config.convert_text:
             create_text(shapes, element, offset_x, offset_y, scale)
     elif isinstance(element, ParsedShape):
         if config.convert_shapes:
-            create_shape(shapes, element, offset_x, offset_y, scale)
+            create_shape(
+                shapes,
+                element,
+                offset_x,
+                offset_y,
+                scale,
+                config=config,
+            )
