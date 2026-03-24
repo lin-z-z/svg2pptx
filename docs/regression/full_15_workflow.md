@@ -65,6 +65,7 @@ conda run -n svg2pptx python scripts\diag_svg2pptx.py `
 至少核对：
 
 - `totals`
+- `page_result_summary`
 - `problem_summary`
 - `key_metrics`
 - `render_protection_summary`

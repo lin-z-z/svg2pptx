@@ -53,6 +53,15 @@ def _build_error_report(args: argparse.Namespace, message: str) -> dict:
             "success_count": 0,
             "failure_count": 1,
         },
+        "page_status_counts": {
+            "success": 0,
+            "warning": 0,
+            "degraded": 0,
+            "failure": 1,
+        },
+        "issue_code_counts": {
+            "INPUT_NOT_FOUND": 1,
+        },
         "results": [],
         "error": message,
     }

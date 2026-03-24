@@ -102,6 +102,7 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
     saved_manifest = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
     assert saved_manifest["sample_set"] == "smoke"
     assert saved_manifest["unsupported_styles_summary"] == []
+    assert saved_manifest["page_result_summary"]["page_status_counts"]["success"] == 2
     assert "problem_summary" in saved_manifest
     assert "key_metrics" in saved_manifest
     assert "filter_support_summary" in saved_manifest
@@ -109,6 +110,7 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "产物路径" in report
     assert "问题分级" in report
+    assert "页面状态与失败码" in report
     assert "关键指标" in report
 
 
@@ -170,6 +172,9 @@ def test_run_regression_exposes_filter_page_results(tmp_path):
     run_dir, manifest = run_regression(sample_dir, tmp_path / "artifacts", "filter_page")
 
     assert manifest["filter_support_summary"]["support_levels"]["approximate"] == 1
+    assert manifest["results"][0]["page_status"] == "degraded"
+    assert "FILTER_APPROXIMATION" in manifest["results"][0]["issue_codes"]
+    assert manifest["results"][0]["fallback_code"] == "KEEP_OUTPUT_WITH_DEGRADATION"
     assert manifest["filter_page_results"][0]["filters"][0]["filter_id"] == "glow"
     assert manifest["filter_page_results"][0]["filters"][0]["current_action"] == "ppt_glow"
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
@@ -200,6 +205,9 @@ def test_run_regression_records_render_protection_warnings(tmp_path):
     codes = {warning["code"] for warning in warnings}
     assert "freeform-points-per-shape-overflow" in codes
     assert "freeform-points-per-page-overflow" in codes
+    assert manifest["results"][0]["page_status"] == "warning"
+    assert manifest["results"][0]["status_code"] == "RENDER_WARNING"
+    assert "RENDER_FREEFORM_POINTS_PER_PAGE_EXCEEDED" in manifest["results"][0]["issue_codes"]
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "Render 保护统计" in report
 
@@ -231,3 +239,25 @@ def test_run_regression_can_compare_previous_run(tmp_path):
     assert second_manifest["comparison"]["delta"]["render_warning_count"] > 0
     report = (second_run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "与上次回归对比" in report
+
+
+def test_run_regression_classifies_runtime_failure(monkeypatch, tmp_path):
+    sample_dir = tmp_path / "samples"
+    sample_dir.mkdir()
+    (sample_dir / "broken.svg").write_text(
+        (FIXTURES_DIR / "basic_shapes.svg").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    def _boom(svg_path: str, pptx_path: str, config=None) -> None:
+        raise RuntimeError("synthetic conversion failure")
+
+    monkeypatch.setattr("scripts.diag_svg2pptx.svg_to_pptx", _boom)
+
+    _, manifest = run_regression(sample_dir, tmp_path / "artifacts", "runtime_failure")
+
+    assert manifest["totals"]["failure_count"] == 1
+    assert manifest["results"][0]["page_status"] == "failure"
+    assert manifest["results"][0]["status_code"] == "RUNTIME_EXCEPTION"
+    assert manifest["results"][0]["fallback_code"] == "SKIP_PAGE"
+    assert manifest["page_result_summary"]["page_status_counts"]["failure"] == 1

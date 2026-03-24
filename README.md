@@ -91,10 +91,16 @@ conda run -n svg2pptx python -m svg2pptx `
 - `input` / `output`
 - `config`
 - `totals`
+- `page_status_counts`
+- `issue_code_counts`
 - `results[*].gradient_stats`
 - `results[*].render_metrics`
 - `results[*].render_warnings`
 - `results[*].unsupported_styles`
+- `results[*].page_status`
+- `results[*].status_code`
+- `results[*].fallback_code`
+- `results[*].issue_codes`
 
 ## 标准回归入口
 

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from svg2pptx.converter import SVGConverter
 from svg2pptx.config import Config
+from svg2pptx.result_status import classify_page_result, summarize_page_statuses
 
 try:
     from importlib.metadata import version, PackageNotFoundError
@@ -68,6 +69,11 @@ def _build_result_item(
     converter: SVGConverter,
     error: str = "",
 ) -> dict:
+    classification = classify_page_result(
+        error=error,
+        render_warnings=list(converter.config.render_warnings),
+        unsupported_styles=list(converter.config.unsupported_styles),
+    )
     return {
         "input_path": str(input_path),
         "output_path": str(output_path),
@@ -77,6 +83,7 @@ def _build_result_item(
         "render_metrics": dict(converter.config.render_metrics),
         "render_warnings": list(converter.config.render_warnings),
         "unsupported_styles": list(converter.config.unsupported_styles),
+        **classification,
     }
 
 
@@ -168,6 +175,7 @@ def convert_svg_inputs(
     else:
         status = "partial_failure"
 
+    summary = summarize_page_statuses(results)
     return {
         "schema_version": "1.0",
         "status": status,
@@ -186,5 +194,6 @@ def convert_svg_inputs(
             "success_count": success_count,
             "failure_count": failure_count,
         },
+        **summary,
         "results": results,
     }

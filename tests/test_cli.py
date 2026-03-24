@@ -28,9 +28,13 @@ def test_convert_svg_inputs_returns_structured_single_file_report(tmp_path):
     assert report["input"]["kind"] == "file"
     assert report["output"]["kind"] == "file"
     assert report["totals"]["success_count"] == 1
+    assert report["page_status_counts"]["success"] == 1
     assert report["config"]["curve_tolerance"] == 0.5
     assert output_pptx.exists()
     assert report["results"][0]["status"] == "success"
+    assert report["results"][0]["page_status"] == "success"
+    assert report["results"][0]["status_code"] == "OK"
+    assert report["results"][0]["fallback_code"] == "NONE"
     assert report["results"][0]["output_path"].endswith("basic_shapes.pptx")
 
 
@@ -53,6 +57,7 @@ def test_convert_svg_inputs_directory_mode_preserves_recursive_structure(tmp_pat
     assert report["status"] == "success"
     assert report["input"]["kind"] == "directory"
     assert report["totals"]["success_count"] == 1
+    assert report["page_status_counts"]["success"] == 1
     assert (output_dir / "cards" / "grouped.pptx").exists()
     assert report["results"][0]["output_path"].endswith("cards\\grouped.pptx")
 
@@ -82,6 +87,8 @@ def test_cli_writes_structured_report_json(tmp_path):
     assert saved["status"] == "success"
     assert saved["totals"]["success_count"] == 1
     assert saved["results"][0]["status"] == "success"
+    assert saved["results"][0]["page_status"] == "success"
+    assert saved["page_status_counts"]["success"] == 1
 
 
 def test_cli_error_path_is_structured(tmp_path):
@@ -101,4 +108,6 @@ def test_cli_error_path_is_structured(tmp_path):
     saved = json.loads(report_path.read_text(encoding="utf-8"))
     assert saved["status"] == "error"
     assert saved["totals"]["failure_count"] == 1
+    assert saved["page_status_counts"]["failure"] == 1
+    assert saved["issue_code_counts"]["INPUT_NOT_FOUND"] == 1
     assert "not found" in saved["error"]

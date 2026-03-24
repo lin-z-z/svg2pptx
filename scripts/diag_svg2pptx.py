@@ -20,6 +20,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from svg2pptx import Config, svg_to_pptx  # noqa: E402
+from svg2pptx.result_status import classify_page_result, summarize_page_statuses  # noqa: E402
 from diag_svg_feature_scan import scan_svg_directory  # noqa: E402
 
 MANIFEST_PATH = REPO_ROOT / "tests" / "fixtures" / "oceanppt" / "manifest.json"
@@ -115,6 +116,11 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
     report += (
         "\n\n## 问题分级\n\n```json\n"
         + json.dumps(manifest["problem_summary"], ensure_ascii=False, indent=2)
+        + "\n```\n"
+    )
+    report += (
+        "\n\n## 页面状态与失败码\n\n```json\n"
+        + json.dumps(manifest["page_result_summary"], ensure_ascii=False, indent=2)
         + "\n```\n"
     )
     report += (
@@ -279,6 +285,27 @@ def _summarize_problem_levels(summary: dict, results: list[dict]) -> dict:
         "counts": level_counts,
         "pages": [page for page in pages if page["level"] != "clean"],
     }
+
+
+def _classify_results(summary: dict, results: list[dict]) -> list[dict]:
+    pages_by_id = {
+        page["page_id"]: page
+        for page in summary.get("pages", [])
+    }
+    classified: list[dict] = []
+    for result in results:
+        page = pages_by_id.get(result["page_id"], {})
+        classification = classify_page_result(
+            error=result.get("error", ""),
+            render_warnings=result.get("render_warnings", []),
+            unsupported_styles=result.get("unsupported_styles", []),
+            filter_results=page.get("filters", []),
+            risk_tags=page.get("risk_tags", []),
+        )
+        enriched = dict(result)
+        enriched.update(classification)
+        classified.append(enriched)
+    return classified
 
 
 def _summarize_key_metrics(run_dir: Path, results: list[dict]) -> dict:
@@ -472,9 +499,11 @@ def run_regression(
                 }
             )
 
+    results = _classify_results(summary, results)
     unsupported_summary = _summarize_unsupported_styles(results)
     gradient_summary = _summarize_gradient_stats(results)
     render_summary = _summarize_render_metrics(results)
+    page_result_summary = summarize_page_statuses(results)
     problem_summary = _summarize_problem_levels(summary, results)
     key_metrics = _summarize_key_metrics(run_dir, results)
     filter_summary = summary.get("filter_support_summary", {})
@@ -506,6 +535,7 @@ def run_regression(
             "failure_count": sum(1 for item in results if item["status"] != "success"),
         },
         "gradient_support_summary": gradient_summary,
+        "page_result_summary": page_result_summary,
         "problem_summary": problem_summary,
         "key_metrics": key_metrics,
         "render_protection_summary": render_summary,
