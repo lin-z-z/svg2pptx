@@ -105,13 +105,16 @@ def test_run_regression_creates_fixed_artifact_layout(tmp_path):
     assert saved_manifest["page_result_summary"]["page_status_counts"]["success"] == 2
     assert "problem_summary" in saved_manifest
     assert "key_metrics" in saved_manifest
+    assert "performance_summary" in saved_manifest
     assert "filter_support_summary" in saved_manifest
     assert "render_protection_summary" in saved_manifest
+    assert saved_manifest["performance_summary"]["top_slowest_pages"]
     report = (run_dir / "reports" / "regression_report.md").read_text(encoding="utf-8")
     assert "产物路径" in report
     assert "问题分级" in report
     assert "页面状态与失败码" in report
     assert "关键指标" in report
+    assert "性能与热点" in report
 
 
 def test_run_regression_records_unsupported_style_items(tmp_path):

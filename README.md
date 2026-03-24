@@ -163,6 +163,7 @@ conda run -n svg2pptx python -m pytest tests\test_converter.py tests\test_diagno
    - `totals`
    - `problem_summary`
    - `key_metrics`
+   - `performance_summary`
    - `render_protection_summary`
    - `comparison`
 4. 最后按 `reports/manual_score.csv` 做抽样人工评分

@@ -78,6 +78,7 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
     unsupported_summary = manifest["unsupported_styles_summary"]
     gradient_summary = manifest["gradient_support_summary"]
     render_summary = manifest["render_protection_summary"]
+    performance_summary = manifest["performance_summary"]
     filter_summary = manifest["filter_support_summary"]
     filter_pages = [
         {
@@ -126,6 +127,11 @@ def _render_report(run_dir: Path, sample_dir: Path, sample_set: str, summary: di
     report += (
         "\n\n## 关键指标\n\n```json\n"
         + json.dumps(manifest["key_metrics"], ensure_ascii=False, indent=2)
+        + "\n```\n"
+    )
+    report += (
+        "\n\n## 性能与热点\n\n```json\n"
+        + json.dumps(performance_summary, ensure_ascii=False, indent=2)
         + "\n```\n"
     )
     report += (
@@ -355,6 +361,62 @@ def _summarize_key_metrics(run_dir: Path, results: list[dict]) -> dict:
     }
 
 
+def _build_performance_summary(run_dir: Path, results: list[dict]) -> dict:
+    page_metrics: list[dict] = []
+    for result in results:
+        output_path = run_dir / result["output_relpath"]
+        size_bytes = output_path.stat().st_size if output_path.exists() else 0
+        render_metrics = result.get("render_metrics", {})
+        page_metrics.append(
+            {
+                "page_id": result["page_id"],
+                "duration_ms": round(float(result.get("duration_ms", 0)), 2),
+                "output_size_bytes": size_bytes,
+                "shape_count": int(render_metrics.get("shape_count", 0)),
+                "freeform_points": int(render_metrics.get("freeform_points", 0)),
+                "max_points_single_shape": int(
+                    render_metrics.get("max_points_single_shape", 0)
+                ),
+                "render_warning_count": len(result.get("render_warnings", [])),
+                "unsupported_style_count": len(result.get("unsupported_styles", [])),
+            }
+        )
+
+    def _top_pages(metric: str) -> list[dict]:
+        return sorted(page_metrics, key=lambda item: item[metric], reverse=True)[:3]
+
+    top_slowest_pages = _top_pages("duration_ms")
+    top_largest_output_pages = _top_pages("output_size_bytes")
+    top_shape_pages = _top_pages("shape_count")
+    top_freeform_pages = _top_pages("freeform_points")
+
+    hotspot_order: list[str] = []
+    for group in (
+        top_slowest_pages,
+        top_largest_output_pages,
+        top_shape_pages,
+        top_freeform_pages,
+    ):
+        for item in group:
+            page_id = item["page_id"]
+            if page_id not in hotspot_order:
+                hotspot_order.append(page_id)
+    for item in page_metrics:
+        if item["render_warning_count"] > 0 and item["page_id"] not in hotspot_order:
+            hotspot_order.append(item["page_id"])
+
+    hotspot_pages = [
+        item for item in page_metrics if item["page_id"] in hotspot_order
+    ]
+    return {
+        "top_slowest_pages": top_slowest_pages,
+        "top_largest_output_pages": top_largest_output_pages,
+        "top_shape_pages": top_shape_pages,
+        "top_freeform_pages": top_freeform_pages,
+        "hotspot_pages": hotspot_pages,
+    }
+
+
 def _extract_comparison_metrics(manifest: dict) -> dict:
     totals = manifest.get("totals", {})
     key_metrics = manifest.get("key_metrics", {})
@@ -506,6 +568,7 @@ def run_regression(
     page_result_summary = summarize_page_statuses(results)
     problem_summary = _summarize_problem_levels(summary, results)
     key_metrics = _summarize_key_metrics(run_dir, results)
+    performance_summary = _build_performance_summary(run_dir, results)
     filter_summary = summary.get("filter_support_summary", {})
     filter_pages = [
         {
@@ -538,6 +601,7 @@ def run_regression(
         "page_result_summary": page_result_summary,
         "problem_summary": problem_summary,
         "key_metrics": key_metrics,
+        "performance_summary": performance_summary,
         "render_protection_summary": render_summary,
         "filter_support_summary": filter_summary,
         "filter_page_results": filter_pages,

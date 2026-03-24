@@ -68,6 +68,7 @@ conda run -n svg2pptx python scripts\diag_svg2pptx.py `
 - `page_result_summary`
 - `problem_summary`
 - `key_metrics`
+- `performance_summary`
 - `render_protection_summary`
 - `unsupported_styles_summary`
 - `comparison`
